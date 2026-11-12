@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="scorpioBg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB7185" />
+      <stop offset="48%" stop-color="#E11D48" />
+      <stop offset="100%" stop-color="#9F1239" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#scorpioBg)" />
+  <g transform="translate(11, 8.5) scale(1.24)">
+    <path d="M10.4 22.0C7.8 19.6 7.4 15.2 10.1 12.5C11.9 10.7 14.6 10.3 16.4 11.4C14.5 11.9 13.3 13.0 13.1 14.5C14.3 13.8 15.7 14.0 16.5 15.1C14.6 15.8 13.0 17.5 12.9 20.6Z" fill="#FFFFFF" />
+    <path d="M10.8 23.0L7.4 22.2L6.8 24.3L8.5 24.7L8.9 23.6L10.7 24.0Z" fill="#FFFFFF" />
+    <path d="M11.3 26.2L7.7 26.6L7.6 28.9L9.3 28.8L9.5 27.6L11.7 27.5Z" fill="#FFFFFF" />
+    <path d="M13.1 29.3L10.1 31.1L10.9 33.2L12.4 32.4L12.0 31.4L14.0 30.4Z" fill="#FFFFFF" />
+    <path d="M10.3 21.6C9.7 26.8 12.8 32.8 17.6 33.3C20.9 33.6 23.5 32.1 25.1 29.9C23.2 30.1 20.9 29.8 18.7 28.8C15.9 27.5 14.3 25.1 14.1 22.3C14.0 20.8 14.6 19.6 15.4 18.8C13.0 18.8 10.6 19.8 10.3 21.6Z" fill="#FFFFFF" />
+    <path d="M24.3 30.1C27.0 28.8 28.7 26.4 29.1 23.6L25.7 23.1C25.3 25.1 24.2 26.7 22.6 27.7Z" fill="#FFFFFF" />
+    <path d="M29.3 22.2C29.7 19.2 28.8 16.3 27.1 13.9L24.2 15.6C25.4 17.4 25.9 19.5 25.8 21.7Z" fill="#FFFFFF" />
+    <path d="M26.2 12.7C24.5 10.5 22.1 9.1 19.4 8.7L19.0 11.9C20.9 12.2 22.5 13.2 23.6 14.7Z" fill="#FFFFFF" />
+    <path d="M18.2 8.7C17.0 6.1 14.6 5.6 12.5 8.3C14.2 7.8 15.6 8.3 16.4 9.7C16.9 10.6 17.6 11.3 18.1 11.7C18.5 10.7 18.6 9.6 18.2 8.7Z" fill="#FFFFFF" />
+  </g>
+</svg>
