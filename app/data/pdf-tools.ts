@@ -196,9 +196,11 @@ export const PDF_TOOLS: PdfTool[] = [
     category: 'convert-from',
     categoryLabel: 'KONVERSI DARI PDF',
     description:
-      'Ubah presentasi PDF statis kembali menjadi slide PowerPoint PPTX yang dapat disunting.',
+      'Konversi dokumen PDF menjadi slide presentasi Microsoft PowerPoint (.pptx) yang dapat diedit langsung dengan rasio layar lebar atau standar.',
     accent: 'orange',
-    workflowSteps: ['Unggah PDF', 'Susun Ulang Slide', 'Unduh PPTX'],
+    badge: 'Siap Pakai',
+    isLive: true,
+    workflowSteps: ['Pilih File PDF', 'Pilih Mode & Rasio Slide', 'Unduh Presentasi (.pptx)'],
   },
   {
     id: 'excel-to-pdf',
