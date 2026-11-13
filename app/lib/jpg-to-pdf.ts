@@ -428,7 +428,9 @@ export async function convertImagesToPdf(
   onProgress?: (current: number, total: number, fileName: string) => void
 ): Promise<GeneratedPdfResult> {
   if (items.length === 0) {
-    throw new Error('Pilih minimal satu gambar JPG atau PNG terlebih dahulu.');
+    throw new Error(
+      'Pilih minimal satu gambar JPG, JPEG, atau PNG terlebih dahulu.'
+    );
   }
 
   // Mode 1: Gabungkan semua gambar dalam satu file PDF (atau hanya 1 gambar)

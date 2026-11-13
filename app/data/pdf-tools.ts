@@ -153,15 +153,15 @@ export const PDF_TOOLS: PdfTool[] = [
   },
   {
     id: 'jpg-to-pdf',
-    name: 'JPG & PNG ke PDF',
+    name: 'JPG/JPEG/PNG ke PDF',
     category: 'convert-to',
     categoryLabel: 'KONVERSI KE PDF',
     description:
-      'Ubah gambar JPG dan PNG tanpa batas jumlah file menjadi PDF dengan pengaturan orientasi, ukuran kertas, dan margin.',
+      'Ubah gambar JPG, JPEG, dan PNG tanpa batas jumlah file menjadi PDF dengan pengaturan orientasi, ukuran kertas, dan margin.',
     accent: 'gold',
     badge: 'Siap Pakai',
     isLive: true,
-    workflowSteps: ['Pilih Gambar JPG / PNG', 'Atur Halaman & Margin', 'Unduh File PDF'],
+    workflowSteps: ['Pilih Gambar JPG/JPEG/PNG', 'Atur Halaman & Margin', 'Unduh File PDF'],
   },
   {
     id: 'pdf-to-jpg',

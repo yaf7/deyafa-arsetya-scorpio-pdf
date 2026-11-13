@@ -118,7 +118,7 @@ export default async function ToolDetailPage({ params }: ToolRouteProps) {
                 href="/jpg-to-pdf"
                 className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-rose-700"
               >
-                <span>Coba JPG &amp; PNG ke PDF (Sudah Aktif)</span>
+                <span>Coba JPG/JPEG/PNG ke PDF (Sudah Aktif)</span>
                 <span>→</span>
               </Link>
             </div>

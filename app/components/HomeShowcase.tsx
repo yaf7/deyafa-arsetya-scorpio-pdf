@@ -144,7 +144,7 @@ export function HomeShowcase() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari 33 alat PDF — JPG & PNG ke PDF, Gabung, OCR, Ringkasan AI..."
+                placeholder="Cari 33 alat PDF — JPG/JPEG/PNG ke PDF, Gabung, OCR, Ringkasan AI..."
                 aria-label="Cari alat PDF"
                 className="w-full rounded-2xl border border-slate-200/95 bg-white py-3.5 pr-11 pl-11 text-sm font-medium text-slate-900 shadow-[0_6px_24px_-6px_rgba(15,23,42,0.07)] transition-all placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-500/10 focus:outline-none"
               />
@@ -349,18 +349,18 @@ export function HomeShowcase() {
                     <div className="max-w-xl">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-[10.5px] font-bold tracking-[0.12em] text-emerald-200 uppercase">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        JPG &amp; PNG ke PDF Sudah Aktif • Fitur Lain Menyusul
+                        JPG/JPEG/PNG ke PDF Sudah Aktif • Fitur Lain Menyusul
                       </span>
                       <h3 className="font-display mt-3 text-xl font-bold tracking-tight text-white sm:text-2xl">
-                        Mulai Sekarang dengan JPG &amp; PNG ke PDF Tanpa Batas
+                        Mulai Sekarang dengan JPG/JPEG/PNG ke PDF Tanpa Batas
                       </h3>
                       <p className="mt-2 text-sm leading-relaxed text-slate-300">
                         Setiap alat di atas sudah memiliki halamannya sendiri.
                         Fitur{' '}
                         <strong className="font-semibold text-white">
-                          JPG &amp; PNG ke PDF
+                          JPG/JPEG/PNG ke PDF
                         </strong>{' '}
-                        sudah aktif penuh untuk mengonversi file JPG &amp; PNG
+                        sudah aktif penuh untuk mengonversi file JPG, JPEG, &amp; PNG
                         dalam jumlah berapa pun dengan pratinjau halaman
                         langsung.
                       </p>
@@ -371,7 +371,7 @@ export function HomeShowcase() {
                         href="/jpg-to-pdf"
                         className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold tracking-wide text-white shadow-sm transition hover:bg-rose-500"
                       >
-                        Buka JPG &amp; PNG ke PDF →
+                        Buka JPG/JPEG/PNG ke PDF →
                       </Link>
                       <button
                         type="button"
@@ -515,7 +515,7 @@ export function HomeShowcase() {
           <span>
             &copy; 2026 Deyafa Arsetya ScorpioPDF. Hak cipta dilindungi.
           </span>
-          <span>33 Halaman Fitur PDF • JPG &amp; PNG ke PDF Aktif</span>
+          <span>33 Halaman Fitur PDF • JPG/JPEG/PNG ke PDF Aktif</span>
         </div>
       </footer>
     </div>

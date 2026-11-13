@@ -130,7 +130,7 @@ export function JpgToPdfWorkspace() {
 
       if (skippedNames.length > 0) {
         setWarningMessage(
-          `${skippedNames.length} file dilewati karena bukan format JPG atau PNG (${skippedNames
+          `${skippedNames.length} file dilewati karena bukan format JPG, JPEG, atau PNG (${skippedNames
             .slice(0, 3)
             .join(', ')}${skippedNames.length > 3 ? ', ...' : ''}).`
         );
@@ -406,7 +406,7 @@ export function JpgToPdfWorkspace() {
     <div className="flex min-h-screen flex-col bg-[#F1F4F9] text-slate-900">
       <Navbar />
 
-      {/* Input file tersembunyi (tanpa batas jumlah file, JPG & PNG) */}
+      {/* Input file tersembunyi (tanpa batas jumlah file, JPG, JPEG, & PNG) */}
       <input
         ref={fileInputRef}
         type="file"
@@ -414,7 +414,7 @@ export function JpgToPdfWorkspace() {
         accept=".jpg,.jpeg,.png,image/jpeg,image/png"
         onChange={handleFileInputChange}
         className="hidden"
-        aria-label="Pilih file gambar JPG atau PNG"
+        aria-label="Pilih file gambar JPG, JPEG, atau PNG"
       />
 
       <main className="relative flex flex-1 flex-col lg:flex-row">
@@ -451,7 +451,7 @@ export function JpgToPdfWorkspace() {
                   </svg>
                 </div>
                 <p className="font-display text-lg font-bold text-slate-900">
-                  Lepaskan Gambar JPG / PNG di Sini
+                  Lepaskan Gambar JPG/JPEG/PNG di Sini
                 </p>
                 <p className="mt-1 text-xs font-medium text-slate-500">
                   Semua gambar akan langsung ditambahkan ke antrean tanpa batas
@@ -484,7 +484,7 @@ export function JpgToPdfWorkspace() {
                 </Link>
                 <span>/</span>
                 <span className="font-bold text-slate-800">
-                  JPG &amp; PNG ke PDF
+                  JPG/JPEG/PNG ke PDF
                 </span>
                 {images.length > 0 && (
                   <span className="ml-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-2xs ring-1 ring-slate-200">
@@ -670,11 +670,11 @@ export function JpgToPdfWorkspace() {
               <div className="my-auto flex flex-col items-center justify-center py-6 text-center">
                 <div className="w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white/95 p-8 shadow-[0_20px_50px_-15px_rgba(15,23,42,0.08)] sm:p-12">
                   <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3.5 py-1 text-[11px] font-bold tracking-wider text-amber-800 uppercase ring-1 ring-amber-200/80">
-                    JPG &amp; PNG ke PDF • Tanpa Batas Jumlah
+                    JPG/JPEG/PNG ke PDF • Tanpa Batas Jumlah
                   </div>
 
                   <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
-                    Konversi JPG &amp; PNG ke PDF
+                    Konversi JPG/JPEG/PNG ke PDF
                   </h1>
                   <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-slate-600 sm:text-[15px]">
                     Masukkan gambar JPG, JPEG, atau PNG sebanyak apa pun tanpa
@@ -701,7 +701,7 @@ export function JpgToPdfWorkspace() {
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <path d="m21 15-5-5L5 21" />
                       </svg>
-                      <span>Pilih Gambar JPG / PNG</span>
+                      <span>Pilih Gambar JPG/JPEG/PNG</span>
                     </button>
 
                     <p className="mt-4 text-xs font-medium text-slate-500">
@@ -734,7 +734,7 @@ export function JpgToPdfWorkspace() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    title="Tambah gambar JPG atau PNG lagi"
+                    title="Tambah gambar JPG, JPEG, atau PNG lagi"
                     aria-label="Tambah gambar lagi"
                     className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-rose-600 text-white shadow-[0_8px_20px_rgba(225,29,72,0.35)] transition hover:scale-105 hover:bg-rose-700"
                   >
@@ -985,7 +985,7 @@ export function JpgToPdfWorkspace() {
                       Tambah Gambar Lainnya
                     </span>
                     <span className="text-[11px] text-slate-400">
-                      JPG / PNG tanpa batas
+                      JPG/JPEG/PNG tanpa batas
                     </span>
                   </button>
                 </div>
@@ -999,7 +999,7 @@ export function JpgToPdfWorkspace() {
           <div className="space-y-6 p-6">
             <div className="border-b border-slate-100 pb-4 text-center">
               <h2 className="font-display text-xl font-extrabold tracking-tight text-slate-900">
-                Opsi JPG &amp; PNG ke PDF
+                Opsi JPG/JPEG/PNG ke PDF
               </h2>
               <p className="mt-1 text-xs text-slate-500">
                 Sesuaikan tata letak halaman PDF Anda sebelum konversi
