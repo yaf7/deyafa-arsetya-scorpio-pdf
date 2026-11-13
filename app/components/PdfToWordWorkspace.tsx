@@ -700,38 +700,58 @@ export function PdfToWordWorkspace() {
                           </button>
                         </div>
 
-                        {/* Thumbnail Canvas / Gambar */}
-                        <div className="relative flex aspect-[1/1.414] w-full items-center justify-center bg-slate-100 overflow-hidden">
-                          {p.thumbnailUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={p.thumbnailUrl}
-                              alt={`Halaman ${p.pageNumber}`}
-                              className="h-full w-full object-contain p-1 transition duration-200 group-hover:scale-[1.02]"
-                            />
-                          ) : (
-                            <div className="flex flex-col items-center gap-1 text-slate-400">
-                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
-                              <span className="text-[10px]">Memuat...</span>
-                            </div>
-                          )}
+                        {/* Thumbnail Canvas / Gambar (WYSIWYG Sesuai Ukuran Kertas & Margin Word) */}
+                        <div
+                          style={{
+                            aspectRatio:
+                              pageSize === 'f4'
+                                ? '1 / 1.535'
+                                : pageSize === 'letter'
+                                ? '1 / 1.294'
+                                : pageSize === 'original'
+                                ? `1 / ${p.aspectRatio}`
+                                : '1 / 1.414',
+                          }}
+                          className={`relative flex w-full items-center justify-center bg-slate-100 overflow-hidden transition-all duration-200 ${
+                            margin === 'none'
+                              ? 'p-0'
+                              : margin === 'narrow'
+                              ? 'p-1.5'
+                              : margin === 'wide'
+                              ? 'p-3.5'
+                              : 'p-2.5'
+                          }`}
+                        >
+                          <div className="relative flex h-full w-full items-center justify-center bg-white shadow-xs overflow-hidden">
+                            {p.thumbnailUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={p.thumbnailUrl}
+                                alt={`Halaman ${p.pageNumber}`}
+                                className="h-full w-full object-contain transition duration-200 group-hover:scale-[1.02]"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center gap-1 text-slate-400">
+                                <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+                                <span className="text-[10px]">Memuat...</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Keterangan Kepadatan Teks Halaman */}
-                        <div className="border-t border-slate-100 bg-white px-2.5 py-1.5 text-[11px]">
-                          {p.hasText ? (
-                            <div className="flex items-center justify-between text-emerald-700 font-medium">
-                              <span className="truncate">Teks Terdeteksi</span>
-                              <span className="text-slate-400 font-mono text-[10px]">
-                                {p.charCount} chr
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between text-amber-600 font-medium">
-                              <span className="truncate">Scan / Gambar</span>
-                              <span className="text-slate-400 font-mono text-[10px]">Visual</span>
-                            </div>
-                          )}
+                        {/* Keterangan Kepadatan Teks Halaman & Pengaturan Live */}
+                        <div className="border-t border-slate-100 bg-white px-2.5 py-1.5 text-[10px] flex items-center justify-between font-medium gap-1">
+                          <span className="text-blue-700 font-bold truncate">
+                            {PDF_TO_WORD_MODES[mode].tag}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[9px] font-bold text-blue-800">
+                              {WORD_PAGE_SIZES[pageSize].label.split('(')[0].trim()}
+                            </span>
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono text-slate-600">
+                              {DOCX_MARGIN_CONFIG[margin].label.split('(')[0].trim()}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );

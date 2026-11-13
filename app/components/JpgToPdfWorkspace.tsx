@@ -946,7 +946,7 @@ export function JpgToPdfWorkspace() {
                           </div>
                         </div>
 
-                        {/* Nama File & Info Format */}
+                        {/* Nama File & Info Format Live */}
                         <div className="mt-2.5 text-center">
                           <p
                             title={item.name}
@@ -958,6 +958,18 @@ export function JpgToPdfWorkspace() {
                             {item.format} • {item.width}×{item.height}
                             {item.rotation > 0 ? ` • ${item.rotation}°` : ''}
                           </p>
+                          {/* Tag Pengaturan Kertas & Margin Live */}
+                          <div className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium text-rose-700">
+                            <span className="rounded bg-rose-50 px-1.5 py-0.5 font-bold">
+                              {pageSize.toUpperCase()}
+                            </span>
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
+                              {orientation === 'landscape' ? 'Lanskap' : 'Potret'}
+                            </span>
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600">
+                              {margin === 'none' ? '0 Margin' : margin === 'small' ? 'Margin Sedang' : 'Margin Besar'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );

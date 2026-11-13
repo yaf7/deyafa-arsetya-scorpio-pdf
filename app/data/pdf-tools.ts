@@ -105,6 +105,7 @@ export const PDF_TOOLS: PdfTool[] = [
     badge: 'Populer',
     featuredInMenu: true,
     workflowSteps: ['Pilih File PDF', 'Atur Urutan', 'Unduh PDF Gabungan'],
+    isLive: true,
   },
   {
     id: 'split-pdf',
@@ -208,9 +209,11 @@ export const PDF_TOOLS: PdfTool[] = [
     category: 'convert-to',
     categoryLabel: 'KONVERSI KE PDF',
     description:
-      'Ubah lembar kerja XLS dan XLSX menjadi laporan PDF dengan susunan halaman yang rapi.',
+      'Ubah lembar kerja XLSX, XLS, dan CSV menjadi laporan PDF rapi dengan orientasi lanskap, ukuran A4/F4, dan kolom anti-terpotong.',
     accent: 'green',
-    workflowSteps: ['Unggah Spreadsheet', 'Sesuaikan Kolom Cetak', 'Unduh PDF'],
+    badge: 'Siap Pakai',
+    isLive: true,
+    workflowSteps: ['Pilih File Excel (.xlsx)', 'Sesuaikan Kertas & Sheet', 'Unduh Laporan PDF'],
   },
   {
     id: 'pdf-to-excel',
@@ -221,6 +224,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Ekstrak tabel dan data keuangan langsung dari dokumen PDF ke dalam file Microsoft Excel.',
     accent: 'green',
     workflowSteps: ['Unggah PDF', 'Deteksi Tabel', 'Unduh XLSX'],
+    isLive: true,
   },
   {
     id: 'html-to-pdf',

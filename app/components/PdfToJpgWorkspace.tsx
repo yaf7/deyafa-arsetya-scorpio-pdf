@@ -775,8 +775,14 @@ export function PdfToJpgWorkspace() {
                           </span>
                         </div>
 
-                        {/* Area Thumbnail */}
-                        <div className="relative flex aspect-[1/1.4] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                        {/* Area Thumbnail (WYSIWYG Sesuai Format & Transparansi) */}
+                        <div
+                          className={`relative flex aspect-[1/1.4] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-100 ${
+                            format === 'png' && transparentPng
+                              ? 'bg-[linear-gradient(45deg,#f1f5f9_25%,transparent_25%),linear-gradient(-45deg,#f1f5f9_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f5f9_75%),linear-gradient(-45deg,transparent_75%,#f1f5f9_75%)] bg-[size:16px_16px] bg-[position:0_0,0_8px,8px_-8px,-8px_0]'
+                              : 'bg-slate-50'
+                          }`}
+                        >
                           {p.thumbnailUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -834,9 +840,15 @@ export function PdfToJpgWorkspace() {
                           )}
                         </div>
 
-                        {/* Footer Kartu: Dimensi Halaman */}
-                        <div className="mt-2 text-center text-[10px] font-medium text-slate-400">
-                          {p.widthPt} × {p.heightPt} pt
+                        {/* Footer Kartu: Format & Resolusi Pixel Output Live */}
+                        <div className="mt-2 flex items-center justify-between text-[10px]">
+                          <span className="rounded bg-rose-50 px-1.5 py-0.5 font-bold uppercase text-rose-700">
+                            {format}
+                          </span>
+                          <span className="font-mono text-slate-500">
+                            {Math.round(p.widthPt * DPI_CONFIG[dpi].scale)} ×{' '}
+                            {Math.round(p.heightPt * DPI_CONFIG[dpi].scale)} px
+                          </span>
                         </div>
                       </div>
                     );

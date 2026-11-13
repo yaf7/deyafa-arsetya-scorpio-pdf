@@ -625,10 +625,25 @@ export function PowerpointToPdfWorkspace() {
                 </span>
               </div>
 
-              {/* Grid Thumbnail Slide */}
+              {/* Grid Thumbnail Slide (WYSIWYG Sesuai Ukuran Kertas & Penempatan Fit Mode) */}
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {pptxFile.slides.map((s) => {
                   const isSelected = selectedSlides.includes(s.slideIndex);
+
+                  // Rasio Kertas Sesuai Pilihan Opsi Pengguna
+                  let cardAspect = '16/9';
+                  if (pageSize === 'a4-portrait') {
+                    cardAspect = '1 / 1.414';
+                  } else if (pageSize === 'a4-landscape') {
+                    cardAspect = '1.414 / 1';
+                  } else if (pageSize === 'f4-landscape') {
+                    cardAspect = '1.535 / 1';
+                  } else if (pageSize === 'letter-landscape') {
+                    cardAspect = '1.294 / 1';
+                  } else {
+                    cardAspect = pptxFile.isWidescreen ? '16 / 9' : '4 / 3';
+                  }
+
                   return (
                     <div
                       key={s.slideIndex}
@@ -668,21 +683,45 @@ export function PowerpointToPdfWorkspace() {
                         </button>
                       </div>
 
-                      {/* Thumbnail Visual Slide */}
-                      <div className="relative flex aspect-video w-full items-center justify-center bg-slate-900/5 overflow-hidden">
-                        {s.thumbnailUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={s.thumbnailUrl}
-                            alt={`Slide ${s.slideNumber}`}
-                            className="h-full w-full object-contain p-1 transition duration-200 group-hover:scale-[1.02]"
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center gap-1 text-slate-400">
-                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-orange-600" />
-                            <span className="text-[10px]">Memuat...</span>
-                          </div>
-                        )}
+                      {/* Wadah Simulasi Kertas PDF Live Sesuai Orientasi & Fit Mode */}
+                      <div className="flex items-center justify-center bg-slate-100 p-2 overflow-hidden">
+                        <div
+                          style={{ aspectRatio: cardAspect }}
+                          className={`relative flex w-full max-h-52 items-center justify-center overflow-hidden bg-white shadow-sm ring-1 ring-slate-200/80 transition-all duration-200 ${
+                            fitMode === 'fit' ? 'p-2' : 'p-0'
+                          }`}
+                        >
+                          {s.thumbnailUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={s.thumbnailUrl}
+                              alt={`Slide ${s.slideNumber}`}
+                              className={`h-full w-full transition duration-200 ${
+                                fitMode === 'fill' ? 'object-cover' : 'object-contain'
+                              }`}
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-1 text-slate-400">
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-orange-600" />
+                              <span className="text-[10px]">Memuat...</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Tag Pengaturan Ukuran & Penempatan Live */}
+                      <div className="border-t border-slate-100 bg-white px-2.5 py-1.5 text-[10px] text-slate-500 flex justify-between items-center font-medium gap-1">
+                        <span className="truncate font-semibold text-slate-700">
+                          {PPTX_PAGE_SIZES[pageSize].label.split('(')[0].trim()}
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="rounded bg-orange-50 px-1.5 py-0.5 text-[9px] font-bold text-orange-700">
+                            {fitMode === 'fill' ? 'Penuh' : 'Margin'}
+                          </span>
+                          <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono text-slate-600">
+                            {quality === 'ultra' ? '4K' : quality === 'high' ? '1080p' : 'Standar'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );

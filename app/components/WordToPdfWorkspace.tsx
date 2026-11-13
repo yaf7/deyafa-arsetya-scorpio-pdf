@@ -569,10 +569,18 @@ export function WordToPdfWorkspace() {
             ) : (
               /* KONDISI 3: PRATINJAU DOKUMEN WORD DI DOM */
               <div className="relative flex-1 pt-2 pb-10">
-                <div className="mb-3 flex items-center justify-between text-xs text-slate-500">
-                  <span className="font-semibold">
-                    Pratinjau Tata Letak Dokumen Word ({pageCount} Halaman)
-                  </span>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-slate-800">
+                      Pratinjau Tata Letak Dokumen Word ({pageCount} Halaman)
+                    </span>
+                    <span className="rounded-full bg-blue-50 px-2.5 py-0.5 font-bold text-blue-700">
+                      {WORD_PAGE_SIZES[pageSize].label.split('(')[0].trim()}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600 font-medium">
+                      {WORD_RENDER_QUALITIES[quality].label.split('(')[0].trim()}
+                    </span>
+                  </div>
                   <span>Skala Pratinjau: {previewZoom}%</span>
                 </div>
 
@@ -588,6 +596,17 @@ export function WordToPdfWorkspace() {
                     {/* Wadah docx-preview merender dokumen */}
                     <div
                       ref={docxContainerRef}
+                      style={{
+                        maxWidth:
+                          pageSize === 'f4'
+                            ? '816px'
+                            : pageSize === 'letter'
+                            ? '816px'
+                            : pageSize === 'a4'
+                            ? '794px'
+                            : '100%',
+                        transition: 'max-width 0.25s ease',
+                      }}
                       className="word-docx-preview-container max-w-full"
                     />
                   </div>

@@ -26,7 +26,10 @@ export function generateStaticParams() {
       tool.id !== 'word-to-pdf' &&
       tool.id !== 'pdf-to-word' &&
       tool.id !== 'powerpoint-to-pdf' &&
-      tool.id !== 'pdf-to-powerpoint'
+      tool.id !== 'pdf-to-powerpoint' &&
+      tool.id !== 'excel-to-pdf' &&
+      tool.id !== 'pdf-to-excel' &&
+      tool.id !== 'merge-pdf'
   ).map((tool) => ({
     toolId: tool.id,
   }));

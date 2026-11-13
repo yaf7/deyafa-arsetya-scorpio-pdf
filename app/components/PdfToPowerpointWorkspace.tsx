@@ -702,8 +702,20 @@ export function PdfToPowerpointWorkspace() {
                           </button>
                         </div>
 
-                        {/* Thumbnail Slide */}
-                        <div className="relative flex aspect-video w-full items-center justify-center bg-slate-100 overflow-hidden">
+                        {/* Thumbnail Slide (WYSIWYG Sesuai Rasio Slide 16:9 atau 4:3) */}
+                        <div
+                          style={{
+                            aspectRatio:
+                              layout === '4x3'
+                                ? '4 / 3'
+                                : layout === '16x9'
+                                ? '16 / 9'
+                                : s.isWidescreen
+                                ? '16 / 9'
+                                : '4 / 3',
+                          }}
+                          className="relative flex w-full items-center justify-center bg-slate-100 overflow-hidden transition-all duration-200"
+                        >
                           {s.thumbnailUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
@@ -719,21 +731,25 @@ export function PdfToPowerpointWorkspace() {
                           )}
                         </div>
 
-                        {/* Keterangan Kepadatan Teks Slide */}
-                        <div className="border-t border-slate-100 bg-white px-2.5 py-1.5 text-[11px]">
-                          {s.hasText ? (
-                            <div className="flex items-center justify-between text-emerald-700 font-medium">
-                              <span className="truncate">Teks Terdeteksi</span>
-                              <span className="text-slate-400 font-mono text-[10px]">
-                                {s.charCount} chr
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between text-amber-600 font-medium">
-                              <span className="truncate">Scan / Gambar</span>
-                              <span className="text-slate-400 font-mono text-[10px]">Visual</span>
-                            </div>
-                          )}
+                        {/* Keterangan Kepadatan Teks Slide & Tag Mode Live */}
+                        <div className="border-t border-slate-100 bg-white px-2.5 py-1.5 text-[10px] flex items-center justify-between font-medium gap-1">
+                          <span className="text-orange-700 font-bold truncate">
+                            {PDF_TO_PPTX_MODES[mode].tag}
+                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="rounded bg-orange-50 px-1.5 py-0.5 text-[9px] font-bold text-orange-800">
+                              {layout === '4x3'
+                                ? '4:3'
+                                : layout === '16x9'
+                                ? '16:9'
+                                : s.isWidescreen
+                                ? '16:9'
+                                : '4:3'}
+                            </span>
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-mono text-slate-600">
+                              {quality === 'ultra' ? '4K' : quality === 'high' ? 'HD' : 'SD'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
