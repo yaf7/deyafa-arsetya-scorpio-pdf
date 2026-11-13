@@ -90,16 +90,18 @@ export function HomeShowcase() {
         {/* Bagian Hero */}
         <section className="mx-auto max-w-[1380px] px-4 pt-10 pb-6 sm:px-6 md:pt-14 md:pb-8 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-rose-200/90 bg-white/90 px-3.5 py-1.5 text-[11.5px] font-bold tracking-[0.14em] text-rose-700 uppercase shadow-[0_2px_10px_rgba(225,29,72,0.08)] backdrop-blur-xs">
-              <svg
-                className="h-3.5 w-3.5 text-rose-600"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" />
-              </svg>
-              <span>Deyafa Arsetya • Rangkaian ScorpioPDF</span>
+            <div className="mb-4 inline-flex items-center gap-2.5 rounded-full border border-slate-200/90 bg-white/95 px-3.5 py-1.5 text-[11px] font-mono tracking-wider text-slate-700 shadow-sm backdrop-blur-xs">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/foto-yafa.jpeg"
+                alt="Deyafa Arsetya"
+                style={{ objectPosition: 'center 32%' }}
+                className="h-5 w-5 rounded-full object-cover grayscale contrast-110 ring-1 ring-slate-400"
+              />
+              <span className="font-bold text-slate-900">DEYAFA ARSETYA</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-500">SCORPIOPDF</span>
+              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
             </div>
 
             <h1 className="font-display text-3xl font-extrabold tracking-tight text-slate-950 sm:text-5xl sm:leading-[1.12]">
@@ -390,6 +392,131 @@ export function HomeShowcase() {
           )}
         </section>
 
+        {/* Bagian Profil Pengembang & Kreator: Deyafa Arsetya (Minimalis, Cool, Misterius) */}
+        <section className="relative overflow-hidden border-t border-slate-900/10 bg-[#06080F] py-16 sm:py-20 text-white">
+          {/* Subtle Ambient Grain & Dark Monochrome Radial Flare */}
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_25%_50%,rgba(225,29,72,0.06),transparent_70%)]"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute -right-20 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full bg-slate-800/20 blur-3xl"
+            aria-hidden="true"
+          />
+
+          <div className="relative mx-auto max-w-[1380px] px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0B0F19]/90 p-8 shadow-2xl backdrop-blur-md sm:p-12">
+              <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-14">
+                {/* Kolom Foto Profil: Tajam, Monokrom, Berwibawa */}
+                <div className="flex flex-col items-center text-center lg:col-span-4">
+                  <div className="relative">
+                    {/* Frame Foto Monokrom Elegan */}
+                    <div className="relative aspect-[4/5] w-56 sm:w-68 overflow-hidden rounded-2xl border border-white/15 bg-black shadow-[0_20px_50px_rgba(0,0,0,0.8)] transition duration-500 hover:border-white/30">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/foto-yafa.jpeg"
+                        alt="Deyafa Arsetya - Lead Architect ScorpioPDF"
+                        style={{ objectPosition: 'center 36%' }}
+                        className="h-full w-full object-cover grayscale contrast-110 transition duration-700 hover:scale-[1.02]"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+
+                      {/* Status Aktif Minimalis */}
+                      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[10px] font-mono tracking-wider text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>ACTIVE</span>
+                        </span>
+                        <span className="font-bold text-slate-300">SCORPIOPDF</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 space-y-1">
+                    <h3 className="font-display text-xl font-bold tracking-tight text-white sm:text-2xl">
+                      Deyafa Arsetya
+                    </h3>
+                    <p className="font-mono text-xs tracking-wider text-slate-400 uppercase">
+                      Lead Architect &amp; Developer
+                    </p>
+                  </div>
+                </div>
+
+                {/* Kolom Narasi: Lugas, Dingin, Percaya Diri, Berpresisi Tinggi */}
+                <div className="space-y-6 text-left lg:col-span-8">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1 text-[11px] font-mono tracking-widest text-slate-400 uppercase">
+                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                    <span>// CREATOR DOSSIER</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h2 className="font-display text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                      Dibangun atas dasar presisi teknik.
+                    </h2>
+                    <p className="font-mono text-xs tracking-wide text-rose-400">
+                      Deyafa Arsetya — Solo Architect behind ScorpioPDF
+                    </p>
+                  </div>
+
+                  <p className="text-sm leading-relaxed text-slate-300 sm:text-base">
+                    Platform ini dikembangkan dengan satu prinsip mutlak:{' '}
+                    <strong className="font-semibold text-white">kecepatan tanpa batas dan privasi tanpa kompromi</strong>.
+                    Setiap algoritma pemrosesan dokumen dieksekusi secara lokal di dalam peramban Anda menggunakan WebAssembly,
+                    meniadakan transfer dokumen ke server eksternal dan menjaga kerahasiaan berkas Anda seutuhnya.
+                  </p>
+
+                  <p className="text-sm leading-relaxed text-slate-400">
+                    Bukan sekadar konverter, ScorpioPDF dirancang sebagai sistem instrumen dokumen yang senyap, bersih, dan berdaya guna tinggi bagi para profesional di Indonesia.
+                  </p>
+
+                  {/* Telemetri Teknis Minimalis (Tanpa Emoji, Desain Terminal Modern) */}
+                  <div className="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-4">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-white/20">
+                      <div className="font-mono text-[10px] tracking-wider text-slate-500 uppercase">
+                        Privacy Core
+                      </div>
+                      <div className="mt-1 font-mono text-xs font-bold text-white">
+                        100% Client-Side
+                      </div>
+                      <div className="text-[10px] text-slate-500">Zero-Server Leak</div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-white/20">
+                      <div className="font-mono text-[10px] tracking-wider text-slate-500 uppercase">
+                        Engine Suite
+                      </div>
+                      <div className="mt-1 font-mono text-xs font-bold text-rose-400">
+                        33 Dedicated Tools
+                      </div>
+                      <div className="text-[10px] text-slate-500">Full PDF Lifecycle</div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-white/20">
+                      <div className="font-mono text-[10px] tracking-wider text-slate-500 uppercase">
+                        Runtime Base
+                      </div>
+                      <div className="mt-1 font-mono text-xs font-bold text-white">
+                        Next 16 • Turbopack
+                      </div>
+                      <div className="text-[10px] text-slate-500">Sub-Second Execution</div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-white/20">
+                      <div className="font-mono text-[10px] tracking-wider text-slate-500 uppercase">
+                        Document Spec
+                      </div>
+                      <div className="mt-1 font-mono text-xs font-bold text-slate-300">
+                        ISO-32000 Compliant
+                      </div>
+                      <div className="text-[10px] text-slate-500">A4, F4 &amp; CPNS Ready</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Keunggulan Ruang Kerja ScorpioPDF */}
         <section className="border-t border-slate-200/80 bg-white/80 py-14 backdrop-blur-xs">
           <div className="mx-auto max-w-[1380px] px-4 sm:px-6 lg:px-8">
@@ -487,13 +614,27 @@ export function HomeShowcase() {
       {/* Footer Rapi */}
       <footer className="relative z-10 border-t border-slate-200/90 bg-white py-10">
         <div className="mx-auto flex max-w-[1380px] flex-col justify-between gap-6 px-4 sm:px-6 md:flex-row md:items-center lg:px-8">
-          <div>
-            <ScorpioLogo size="sm" />
-            <p className="mt-2.5 max-w-sm text-xs leading-relaxed text-slate-500">
-              Deyafa Arsetya ScorpioPDF — Perangkat alat PDF modern dan estetik
-              yang dirancang untuk kemudahan pengaturan, konversi, penyuntingan,
-              serta kecerdasan dokumen.
-            </p>
+          <div className="flex items-center gap-3.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/foto-yafa.jpeg"
+              alt="Deyafa Arsetya"
+              style={{ objectPosition: 'center 32%' }}
+              className="h-11 w-11 rounded-xl object-cover grayscale contrast-110 ring-1 ring-slate-300 shadow-xs shrink-0"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-sm font-bold text-slate-900">
+                  Deyafa Arsetya ScorpioPDF
+                </span>
+                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-mono font-bold text-slate-700">
+                  BY DEYAFA ARSETYA
+                </span>
+              </div>
+              <p className="mt-0.5 max-w-sm text-xs leading-relaxed text-slate-500">
+                Arsitektur orisinal dengan eksekusi 100% lokal di browser. Dirancang untuk presisi dan privasi mutlak.
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-slate-500">
