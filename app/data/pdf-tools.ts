@@ -136,10 +136,11 @@ export const PDF_TOOLS: PdfTool[] = [
     category: 'convert-from',
     categoryLabel: 'KONVERSI DARI PDF',
     description:
-      'Konversi dokumen PDF Anda menjadi file Microsoft Word yang rapi dan dapat diedit.',
+      'Konversi dokumen PDF Anda menjadi file Microsoft Word (.docx) yang dapat diedit langsung dengan struktur teks, heading, dan scan otomatis.',
     accent: 'blue',
-    badge: 'Populer',
-    workflowSteps: ['Unggah PDF', 'Pertahankan Tata Letak', 'Unduh DOCX'],
+    badge: 'Siap Pakai',
+    isLive: true,
+    workflowSteps: ['Pilih File PDF', 'Sesuaikan Mode & Halaman', 'Unduh Dokumen Word (.docx)'],
   },
   {
     id: 'word-to-pdf',

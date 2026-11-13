@@ -23,7 +23,8 @@ export function generateStaticParams() {
     (tool) =>
       tool.id !== 'jpg-to-pdf' &&
       tool.id !== 'pdf-to-jpg' &&
-      tool.id !== 'word-to-pdf'
+      tool.id !== 'word-to-pdf' &&
+      tool.id !== 'pdf-to-word'
   ).map((tool) => ({
     toolId: tool.id,
   }));
