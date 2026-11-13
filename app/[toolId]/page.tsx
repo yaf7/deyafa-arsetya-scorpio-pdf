@@ -29,7 +29,9 @@ export function generateStaticParams() {
       tool.id !== 'pdf-to-powerpoint' &&
       tool.id !== 'excel-to-pdf' &&
       tool.id !== 'pdf-to-excel' &&
-      tool.id !== 'merge-pdf'
+      tool.id !== 'merge-pdf' &&
+      tool.id !== 'split-pdf' &&
+      tool.id !== 'compress-pdf'
   ).map((tool) => ({
     toolId: tool.id,
   }));

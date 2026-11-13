@@ -117,6 +117,7 @@ export const PDF_TOOLS: PdfTool[] = [
     accent: 'coral',
     badge: 'Populer',
     workflowSteps: ['Unggah PDF', 'Pilih Rentang Halaman', 'Ekspor File Terpisah'],
+    isLive: true,
   },
   {
     id: 'compress-pdf',
@@ -128,6 +129,7 @@ export const PDF_TOOLS: PdfTool[] = [
     accent: 'lime',
     badge: 'Populer',
     workflowSteps: ['Unggah PDF', 'Pilih Tingkat Kompresi', 'Simpan PDF Ringan'],
+    isLive: true,
   },
 
   // KONVERSI POPULER & FORMAT DOKUMEN
