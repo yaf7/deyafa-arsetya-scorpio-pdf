@@ -147,9 +147,11 @@ export const PDF_TOOLS: PdfTool[] = [
     category: 'convert-to',
     categoryLabel: 'KONVERSI KE PDF',
     description:
-      'Ubah dokumen DOC dan DOCX menjadi file PDF siap cetak dan mudah dibagikan dalam sekejap.',
+      'Ubah dokumen DOC dan DOCX menjadi file PDF siap cetak dengan tata letak rapi, tabel, dan gambar yang terjaga langsung di browser.',
     accent: 'blue',
-    workflowSteps: ['Pilih File Word', 'Render Tipografi', 'Unduh PDF'],
+    badge: 'Siap Pakai',
+    isLive: true,
+    workflowSteps: ['Pilih Dokumen Word', 'Pratinjau Tata Letak & Ukuran', 'Unduh File PDF'],
   },
   {
     id: 'jpg-to-pdf',

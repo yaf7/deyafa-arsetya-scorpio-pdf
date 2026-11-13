@@ -20,7 +20,10 @@ export const instant = false;
 
 export function generateStaticParams() {
   return PDF_TOOLS.filter(
-    (tool) => tool.id !== 'jpg-to-pdf' && tool.id !== 'pdf-to-jpg'
+    (tool) =>
+      tool.id !== 'jpg-to-pdf' &&
+      tool.id !== 'pdf-to-jpg' &&
+      tool.id !== 'word-to-pdf'
   ).map((tool) => ({
     toolId: tool.id,
   }));

@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "docx-preview": "^0.4.1",
+    "html2canvas": "^1.4.1",
     "jszip": "^3.10.2",
     "next": "16.4.6",
     "pdf-lib": "^1.17.1",
