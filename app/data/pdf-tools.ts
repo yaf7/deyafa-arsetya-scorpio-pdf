@@ -184,9 +184,11 @@ export const PDF_TOOLS: PdfTool[] = [
     category: 'convert-to',
     categoryLabel: 'KONVERSI KE PDF',
     description:
-      'Jadikan presentasi PPT dan PPTX mudah dibagikan serta tampil konsisten di perangkat mana saja.',
+      'Konversi presentasi PPTX menjadi dokumen PDF berkualitas tinggi dengan rasio layar 16:9/4:3 asli, A4, atau F4 langsung di browser.',
     accent: 'orange',
-    workflowSteps: ['Unggah Presentasi', 'Kunci Tata Letak Slide', 'Unduh PDF'],
+    badge: 'Siap Pakai',
+    isLive: true,
+    workflowSteps: ['Pilih File PowerPoint (.pptx)', 'Pilih Slide & Ukuran Kertas', 'Unduh File PDF'],
   },
   {
     id: 'pdf-to-powerpoint',
