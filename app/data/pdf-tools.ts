@@ -165,13 +165,15 @@ export const PDF_TOOLS: PdfTool[] = [
   },
   {
     id: 'pdf-to-jpg',
-    name: 'PDF ke JPG',
+    name: 'PDF ke JPG/JPEG/PNG',
     category: 'convert-from',
     categoryLabel: 'KONVERSI DARI PDF',
     description:
-      'Ekstrak setiap halaman PDF menjadi gambar JPG resolusi tinggi atau ambil gambar di dalamnya.',
+      'Konversi setiap halaman dokumen PDF menjadi gambar JPG, JPEG, atau PNG resolusi tinggi secara instan dan aman di browser Anda.',
     accent: 'gold',
-    workflowSteps: ['Unggah PDF', 'Pilih Kualitas DPI', 'Unduh Gambar'],
+    badge: 'Siap Pakai',
+    isLive: true,
+    workflowSteps: ['Pilih Dokumen PDF', 'Pilih Format & Resolusi DPI', 'Unduh Gambar / ZIP'],
   },
   {
     id: 'powerpoint-to-pdf',

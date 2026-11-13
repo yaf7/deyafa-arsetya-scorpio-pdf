@@ -349,37 +349,39 @@ export function HomeShowcase() {
                     <div className="max-w-xl">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1 text-[10.5px] font-bold tracking-[0.12em] text-emerald-200 uppercase">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        JPG/JPEG/PNG ke PDF Sudah Aktif • Fitur Lain Menyusul
+                        JPG/JPEG/PNG ke PDF &amp; PDF ke JPG/JPEG/PNG Siap Pakai
                       </span>
                       <h3 className="font-display mt-3 text-xl font-bold tracking-tight text-white sm:text-2xl">
-                        Mulai Sekarang dengan JPG/JPEG/PNG ke PDF Tanpa Batas
+                        Konversi Gambar &amp; PDF Dua Arah Tanpa Batas
                       </h3>
                       <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                        Setiap alat di atas sudah memiliki halamannya sendiri.
                         Fitur{' '}
                         <strong className="font-semibold text-white">
                           JPG/JPEG/PNG ke PDF
                         </strong>{' '}
-                        sudah aktif penuh untuk mengonversi file JPG, JPEG, &amp; PNG
-                        dalam jumlah berapa pun dengan pratinjau halaman
-                        langsung.
+                        dan{' '}
+                        <strong className="font-semibold text-white">
+                          PDF ke JPG/JPEG/PNG
+                        </strong>{' '}
+                        sudah aktif penuh. Konversi gambar apa pun ke dokumen PDF atau
+                        ekstrak halaman PDF menjadi gambar resolusi tinggi (hingga 300 DPI)
+                        langsung di browser Anda.
                       </p>
                     </div>
 
                     <div className="flex shrink-0 flex-wrap gap-2.5">
+                      <Link
+                        href="/pdf-to-jpg"
+                        className="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold tracking-wide text-slate-950 shadow-sm transition hover:bg-amber-400"
+                      >
+                        Buka PDF ke JPG/JPEG/PNG →
+                      </Link>
                       <Link
                         href="/jpg-to-pdf"
                         className="rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold tracking-wide text-white shadow-sm transition hover:bg-rose-500"
                       >
                         Buka JPG/JPEG/PNG ke PDF →
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => setActiveCategory('intelligence')}
-                        className="cursor-pointer rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-bold tracking-wide text-white backdrop-blur-xs transition hover:bg-white/20"
-                      >
-                        Jelajahi Alat AI
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -515,7 +517,7 @@ export function HomeShowcase() {
           <span>
             &copy; 2026 Deyafa Arsetya ScorpioPDF. Hak cipta dilindungi.
           </span>
-          <span>33 Halaman Fitur PDF • JPG/JPEG/PNG ke PDF Aktif</span>
+          <span>33 Halaman Fitur PDF • Konversi Gambar &amp; PDF Siap Pakai</span>
         </div>
       </footer>
     </div>

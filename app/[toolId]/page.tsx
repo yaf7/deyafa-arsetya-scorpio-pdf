@@ -19,7 +19,9 @@ type ToolRouteProps = {
 export const instant = false;
 
 export function generateStaticParams() {
-  return PDF_TOOLS.filter((tool) => tool.id !== 'jpg-to-pdf').map((tool) => ({
+  return PDF_TOOLS.filter(
+    (tool) => tool.id !== 'jpg-to-pdf' && tool.id !== 'pdf-to-jpg'
+  ).map((tool) => ({
     toolId: tool.id,
   }));
 }
