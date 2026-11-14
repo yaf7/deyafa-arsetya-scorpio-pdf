@@ -248,6 +248,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Konversi dokumen ke format standar ISO PDF/A untuk pengarsipan legal jangka panjang.',
     accent: 'slateBlue',
     workflowSteps: ['Unggah PDF', 'Pilih Level ISO', 'Unduh PDF/A'],
+    isLive: true,
   },
 
   // SISA ALAT ATUR PDF

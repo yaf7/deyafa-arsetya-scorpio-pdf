@@ -32,7 +32,8 @@ export function generateStaticParams() {
       tool.id !== 'merge-pdf' &&
       tool.id !== 'split-pdf' &&
       tool.id !== 'compress-pdf' &&
-      tool.id !== 'html-to-pdf'
+      tool.id !== 'html-to-pdf' &&
+      tool.id !== 'pdf-to-pdfa'
   ).map((tool) => ({
     toolId: tool.id,
   }));
