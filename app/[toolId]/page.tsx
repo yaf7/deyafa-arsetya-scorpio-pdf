@@ -35,7 +35,8 @@ export function generateStaticParams() {
       tool.id !== 'html-to-pdf' &&
       tool.id !== 'pdf-to-pdfa' &&
       tool.id !== 'remove-pages' &&
-      tool.id !== 'extract-pages'
+      tool.id !== 'extract-pages' &&
+      tool.id !== 'organize-pdf'
   ).map((tool) => ({
     toolId: tool.id,
   }));

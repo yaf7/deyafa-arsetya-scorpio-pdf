@@ -283,6 +283,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Urutkan, susun ulang, duplikasi, atau hapus halaman dengan kontrol pratinjau thumbnail.',
     accent: 'coral',
     workflowSteps: ['Unggah PDF', 'Atur Thumbnail', 'Terapkan & Simpan'],
+    isLive: true,
   },
   {
     id: 'scan-to-pdf',
