@@ -237,6 +237,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Tangkap halaman web atau kode HTML menjadi dokumen PDF vektor yang tajam dan presisi.',
     accent: 'amber',
     workflowSteps: ['Masukkan URL / HTML', 'Atur Ukuran Layar', 'Ekspor PDF'],
+    isLive: true,
   },
   {
     id: 'pdf-to-pdfa',
