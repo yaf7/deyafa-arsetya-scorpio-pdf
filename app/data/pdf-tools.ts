@@ -272,6 +272,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Ambil halaman tertentu dari dokumen besar untuk membuat file PDF baru yang lebih ringkas.',
     accent: 'coral',
     workflowSteps: ['Unggah PDF', 'Pilih Halaman', 'Ekstrak PDF'],
+    isLive: true,
   },
   {
     id: 'organize-pdf',

@@ -34,7 +34,8 @@ export function generateStaticParams() {
       tool.id !== 'compress-pdf' &&
       tool.id !== 'html-to-pdf' &&
       tool.id !== 'pdf-to-pdfa' &&
-      tool.id !== 'remove-pages'
+      tool.id !== 'remove-pages' &&
+      tool.id !== 'extract-pages'
   ).map((tool) => ({
     toolId: tool.id,
   }));
