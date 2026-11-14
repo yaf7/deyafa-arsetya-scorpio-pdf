@@ -294,6 +294,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Ubah foto dokumen kertas dari perangkat Anda menjadi file PDF yang tajam dan rapi.',
     accent: 'coral',
     workflowSteps: ['Ambil / Unggah', 'Pertajam Tepi Otomatis', 'Simpan PDF'],
+    isLive: true,
   },
 
   // SISA ALAT OPTIMALKAN PDF
