@@ -261,6 +261,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Pilih dan hapus halaman yang tidak diperlukan dari dokumen PDF dalam hitungan detik.',
     accent: 'coral',
     workflowSteps: ['Unggah PDF', 'Tandai Halaman', 'Simpan PDF Bersih'],
+    isLive: true,
   },
   {
     id: 'extract-pages',

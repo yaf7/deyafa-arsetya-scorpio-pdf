@@ -1,0 +1,938 @@
+'use client';
+
+import Link from 'next/link';
+import {
+  ChangeEvent,
+  DragEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  executeRemovePages,
+  formatBytes,
+  formatPageNumbers,
+  GeneratedRemovePagesResult,
+  inspectPdfForRemovePages,
+  InspectRemovePagesResult,
+  parsePageRangeInput,
+  sanitizePdfFilename,
+  stripPdfExtension,
+} from '@/app/lib/remove-pages';
+import { Navbar } from './Navbar';
+
+export function RemovePagesWorkspace() {
+  // Berkas PDF Sumber
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [inspectData, setInspectData] = useState<InspectRemovePagesResult | null>(null);
+  const [isLoadingPdf, setIsLoadingPdf] = useState<boolean>(false);
+  const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Set nomor halaman yang DITANDAI UNTUK DIHAPUS (1-indexed)
+  const [pagesToRemove, setPagesToRemove] = useState<Set<number>>(new Set());
+
+  // Input teks rentang halaman (misal: "1, 3-5, 8")
+  const [rangeInput, setRangeInput] = useState<string>('');
+
+  // Opsi Berkas Output
+  const [outputName, setOutputName] = useState<string>('');
+
+  // Status Eksekusi
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [processStatus, setProcessStatus] = useState<{ step: number; total: number; message: string } | null>(null);
+  const [processError, setProcessError] = useState<string | null>(null);
+
+  // Hasil Eksekusi
+  const [result, setResult] = useState<GeneratedRemovePagesResult | null>(null);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+
+  // Drag & Drop
+  const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
+  const dragDepthRef = useRef<number>(0);
+
+  // Modal zoom pratinjau halaman
+  const [activeZoomPage, setActiveZoomPage] = useState<number | null>(null);
+
+  // Refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeResultUrlRef = useRef<string | null>(null);
+  const activeThumbnailsRef = useRef<string[]>([]);
+
+  // Bersihkan Object URLs saat unmount
+  useEffect(() => {
+    return () => {
+      if (activeResultUrlRef.current) {
+        URL.revokeObjectURL(activeResultUrlRef.current);
+        activeResultUrlRef.current = null;
+      }
+      activeThumbnailsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      activeThumbnailsRef.current = [];
+    };
+  }, []);
+
+  const clearResult = useCallback(() => {
+    if (activeResultUrlRef.current) {
+      URL.revokeObjectURL(activeResultUrlRef.current);
+      activeResultUrlRef.current = null;
+    }
+    setResultUrl(null);
+    setResult(null);
+  }, []);
+
+  // Pemilihan File PDF
+  const handleSelectFile = useCallback(
+    async (file: File) => {
+      if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+        setLoadError('Pilih file berkas berformat PDF yang valid (.pdf).');
+        return;
+      }
+
+      setLoadError(null);
+      setProcessError(null);
+      clearResult();
+
+      // Bersihkan thumbnail sebelumnya
+      activeThumbnailsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      activeThumbnailsRef.current = [];
+
+      setIsLoadingPdf(true);
+      setSelectedFile(file);
+      setPagesToRemove(new Set());
+      setRangeInput('');
+      setOutputName(`${stripPdfExtension(file.name)}-bersih`);
+
+      try {
+        const inspected = await inspectPdfForRemovePages(file, (loaded, total) => {
+          setLoadProgress({ loaded, total });
+        });
+
+        inspected.pages.forEach((p) => {
+          if (p.thumbnailUrl) activeThumbnailsRef.current.push(p.thumbnailUrl);
+        });
+
+        setInspectData(inspected);
+      } catch (err) {
+        setLoadError(
+          err instanceof Error
+            ? err.message
+            : 'Gagal memuat dan menganalisis berkas PDF. Pastikan file tidak rusak atau terkunci sandi.'
+        );
+        setSelectedFile(null);
+        setInspectData(null);
+      } finally {
+        setIsLoadingPdf(false);
+        setLoadProgress(null);
+      }
+    },
+    [clearResult]
+  );
+
+  // Reset Dokumen Total
+  const handleResetDocument = () => {
+    clearResult();
+    activeThumbnailsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    activeThumbnailsRef.current = [];
+    setSelectedFile(null);
+    setInspectData(null);
+    setLoadError(null);
+    setProcessError(null);
+    setPagesToRemove(new Set());
+    setRangeInput('');
+    setOutputName('');
+    setActiveZoomPage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Dukungan Ctrl + V
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (inspectData) return;
+      if (!e.clipboardData?.files?.length) return;
+      const pdf = Array.from(e.clipboardData.files).find(
+        (f) => f.name.toLowerCase().endsWith('.pdf') || f.type === 'application/pdf'
+      );
+      if (pdf) {
+        e.preventDefault();
+        void handleSelectFile(pdf);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [handleSelectFile, inspectData]);
+
+  // Drag & Drop
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingFile(true);
+    }
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current--;
+    if (dragDepthRef.current <= 0) {
+      dragDepthRef.current = 0;
+      setIsDraggingFile(false);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setIsDraggingFile(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      void handleSelectFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  // Toggle satu halaman untuk dihapus
+  const togglePageToRemove = (pageNum: number) => {
+    setPagesToRemove((prev) => {
+      const next = new Set(prev);
+      if (next.has(pageNum)) {
+        next.delete(pageNum);
+      } else {
+        next.add(pageNum);
+      }
+      setRangeInput(formatPageNumbers(Array.from(next)));
+      return next;
+    });
+    clearResult();
+  };
+
+  // Update dari input rentang teks
+  const handleRangeInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setRangeInput(val);
+    if (!inspectData) return;
+    const parsed = parsePageRangeInput(val, inspectData.pageCount);
+    setPagesToRemove(parsed);
+    clearResult();
+  };
+
+  // Tombol Pintas: Pilih Semua Ganjil
+  const handleSelectOdd = () => {
+    if (!inspectData) return;
+    const odds = new Set<number>();
+    for (let i = 1; i <= inspectData.pageCount; i += 2) {
+      odds.add(i);
+    }
+    setPagesToRemove(odds);
+    setRangeInput(formatPageNumbers(Array.from(odds)));
+    clearResult();
+  };
+
+  // Tombol Pintas: Pilih Semua Genap
+  const handleSelectEven = () => {
+    if (!inspectData) return;
+    const evens = new Set<number>();
+    for (let i = 2; i <= inspectData.pageCount; i += 2) {
+      evens.add(i);
+    }
+    setPagesToRemove(evens);
+    setRangeInput(formatPageNumbers(Array.from(evens)));
+    clearResult();
+  };
+
+  // Tombol Pintas: Balikkan Pilihan (Invert)
+  const handleInvertSelection = () => {
+    if (!inspectData) return;
+    const inverted = new Set<number>();
+    for (let i = 1; i <= inspectData.pageCount; i++) {
+      if (!pagesToRemove.has(i)) {
+        inverted.add(i);
+      }
+    }
+    setPagesToRemove(inverted);
+    setRangeInput(formatPageNumbers(Array.from(inverted)));
+    clearResult();
+  };
+
+  // Tombol Pintas: Batalkan Semua Pilihan Hapus
+  const handleClearSelection = () => {
+    setPagesToRemove(new Set());
+    setRangeInput('');
+    clearResult();
+  };
+
+  // Eksekusi Penghapusan Halaman
+  const handleStartRemoval = async () => {
+    if (!selectedFile || !inspectData) return;
+
+    if (pagesToRemove.size === 0) {
+      setProcessError('Pilih setidaknya 1 halaman yang ingin dihapus.');
+      return;
+    }
+
+    if (pagesToRemove.size >= inspectData.pageCount) {
+      setProcessError('Anda tidak dapat menghapus semua halaman! Sisakan setidaknya 1 halaman.');
+      return;
+    }
+
+    setProcessError(null);
+    clearResult();
+    setIsProcessing(true);
+    setProcessStatus({ step: 1, total: 4, message: 'Menyiapkan berkas...' });
+
+    try {
+      const res = await executeRemovePages(
+        selectedFile,
+        pagesToRemove,
+        outputName || `${stripPdfExtension(selectedFile.name)}-bersih`,
+        (step, total, message) => {
+          setProcessStatus({ step, total, message });
+        }
+      );
+
+      const url = URL.createObjectURL(res.blob);
+      activeResultUrlRef.current = url;
+      setResultUrl(url);
+      setResult(res);
+    } catch (err) {
+      setProcessError(
+        err instanceof Error
+          ? err.message
+          : 'Terjadi kesalahan saat menghapus halaman dokumen PDF.'
+      );
+    } finally {
+      setIsProcessing(false);
+      setProcessStatus(null);
+    }
+  };
+
+  // Statistik Ringkasan
+  const removedCount = pagesToRemove.size;
+  const totalPages = inspectData?.pageCount || 0;
+  const remainingCount = totalPages - removedCount;
+  const isInvalidAllDeleted = totalPages > 0 && remainingCount <= 0;
+
+  return (
+    <div className="relative flex min-h-screen flex-col bg-[#F8F9FC] text-slate-900">
+      <div
+        className="bg-dot-grid pointer-events-none fixed inset-0 z-0 opacity-75"
+        aria-hidden="true"
+      />
+
+      <Navbar />
+
+      {/* Input File Tersembunyi */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          if (e.target.files && e.target.files.length > 0) {
+            void handleSelectFile(e.target.files[0]);
+          }
+        }}
+        className="hidden"
+        aria-label="Pilih dokumen PDF"
+      />
+
+      <main className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+        {/* Breadcrumb Navigasi */}
+        <div className="mb-6 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="hover:text-slate-800 transition flex items-center gap-1">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+              </svg>
+              <span>Semua Alat</span>
+            </Link>
+            <span>/</span>
+            <span className="text-slate-400">ATUR PDF</span>
+            <span>/</span>
+            <span className="font-bold text-slate-900">Hapus Halaman</span>
+          </div>
+
+          {/* Indikator Berkas Saat Dokumen Sudah Dimuat */}
+          {inspectData && (
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-2xs border border-slate-200">
+                <span className="text-rose-600 font-extrabold">🗑️</span>
+                <span className="max-w-[200px] truncate">{inspectData.fileName}</span>
+                <span className="text-slate-400 font-mono text-[11px]">
+                  ({inspectData.pageCount} Hal • {formatBytes(inspectData.fileSize)})
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 cursor-pointer"
+              >
+                Ganti File
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDocument}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 shadow-2xs transition hover:bg-rose-100 cursor-pointer"
+              >
+                Hapus
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Hero Section */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/90 bg-rose-50/80 px-3.5 py-1 text-xs font-bold text-rose-800 uppercase tracking-wider shadow-2xs">
+            <svg className="h-3.5 w-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            MANAJEMEN HALAMAN • Cepat &amp; Presisi
+          </div>
+          <h1 className="mt-3 font-display text-2xl font-black tracking-tight text-slate-950 sm:text-3xl md:text-4xl">
+            Hapus Halaman yang <span className="text-rose-600">Tidak Diinginkan</span> dari PDF
+          </h1>
+          <p className="mx-auto mt-2.5 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            Pilih dan buang halaman kosong, lembar berlebih, atau informasi sensitif dari dokumen PDF Anda secara visual maupun melalui ketikan rentang nomor. Kualitas teks, vektor, dan tata letak halaman yang tersisa tetap terjaga 100%.
+          </p>
+        </div>
+
+        {/* Notifikasi Pesan Kesalahan */}
+        {(loadError || processError) && (
+          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 sm:text-sm shadow-xs">
+            <svg className="h-5 w-5 shrink-0 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1 font-medium">{loadError || processError}</div>
+            <button
+              onClick={() => {
+                setLoadError(null);
+                setProcessError(null);
+              }}
+              className="text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* ========================================================================================= */}
+        {/* KONDISI 1: BELUM ADA FILE (DROPZONE BERSIH TANPA PREVIEW AWAL) */}
+        {/* ========================================================================================= */}
+        {!inspectData && (
+          <div className="mx-auto w-full max-w-3xl">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`group relative flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed p-10 sm:p-14 text-center transition-all duration-300 ${
+                isDraggingFile
+                  ? 'border-rose-500 bg-rose-50/70 shadow-2xl scale-[1.01]'
+                  : 'border-slate-300/80 bg-white/95 shadow-xl shadow-slate-200/50 hover:border-rose-400 hover:bg-white hover:shadow-2xl hover:scale-[1.005]'
+              }`}
+            >
+              {/* Visual Icon */}
+              <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-tr from-rose-600 to-orange-500 text-white shadow-lg shadow-rose-500/30 transition-transform duration-300 group-hover:scale-110">
+                <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md border-2 border-white">
+                  <span className="text-[11px] font-black font-mono">DEL</span>
+                </div>
+              </div>
+
+              {isLoadingPdf ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-3 border-rose-600 border-t-transparent" />
+                  <p className="text-base font-semibold text-slate-700">
+                    Memuat dan menganalisis berkas PDF...
+                  </p>
+                  {loadProgress && (
+                    <p className="text-xs text-slate-400 font-mono">
+                      Merender pratinjau halaman {loadProgress.loaded} dari {loadProgress.total}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <p className="font-display text-lg sm:text-xl font-black text-slate-900">
+                    Pilih atau Tarik Berkas PDF ke Sini
+                  </p>
+                  <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-500 leading-relaxed">
+                    Unggah berkas dokumen PDF yang ingin Anda kurangi halamannya. Anda juga dapat menempel berkas langsung dengan <kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700 border border-slate-300">Ctrl + V</kbd>.
+                  </p>
+
+                  {/* Tombol Utama Unggah */}
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="inline-flex items-center gap-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 px-6 shadow-[0_12px_28px_-6px_rgba(225,29,72,0.48)] transition-all cursor-pointer text-sm"
+                    >
+                      <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>Pilih Berkas PDF dari Komputer</span>
+                    </button>
+                  </div>
+
+                  {/* Keunggulan Fitur */}
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <span>100% Client-Side Tanpa Upload Server</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                      <span>Pilih Visual atau Ketik Rentang Nomor</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                      <span>Kualitas Teks &amp; Gambar Asli Terjaga</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================================= */}
+        {/* KONDISI 2: FILE SUDAH DIMUAT (RUANG KERJA HAPUS HALAMAN INTERAKTIF) */}
+        {/* ========================================================================================= */}
+        {inspectData && (
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+            {/* Kolom Kiri: Grid Visual Seluruh Halaman Dokumen (lg:col-span-8) */}
+            <div className="space-y-4 lg:col-span-8">
+              {/* Toolbar Pengendali Pemilihan & Rentang Nomor */}
+              <div className="rounded-3xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900">
+                      Tandai Halaman yang Ingin Dihapus
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Klik langsung pada kartu halaman di bawah, atau masukkan rentang nomor halaman.
+                    </p>
+                  </div>
+
+                  {/* Tombol Pintas Seleksi Cepat */}
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                    <button
+                      type="button"
+                      onClick={handleSelectOdd}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700 hover:border-slate-300 hover:bg-white transition cursor-pointer"
+                    >
+                      Halaman Ganjil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectEven}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700 hover:border-slate-300 hover:bg-white transition cursor-pointer"
+                    >
+                      Halaman Genap
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleInvertSelection}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 font-semibold text-slate-700 hover:border-slate-300 hover:bg-white transition cursor-pointer"
+                    >
+                      Balikkan
+                    </button>
+                    {pagesToRemove.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearSelection}
+                        className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1 font-bold text-rose-700 hover:bg-rose-100 transition cursor-pointer"
+                      >
+                        Reset Tanda (0)
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Input Teks Rentang Nomor Halaman */}
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-3.5 top-3 text-slate-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    value={rangeInput}
+                    onChange={handleRangeInputChange}
+                    placeholder="Contoh: 1, 3-5, 8 (halaman yang akan dihapus)"
+                    className="w-full rounded-2xl border border-slate-300 bg-slate-50/70 py-2.5 pl-10 pr-24 text-xs font-semibold text-slate-800 placeholder-slate-400 shadow-inner transition focus:border-rose-500 focus:bg-white focus:outline-none"
+                  />
+                  <span className="pointer-events-none absolute right-3.5 top-2.5 text-[11px] font-bold text-rose-600">
+                    {pagesToRemove.size} Halaman Terpilih
+                  </span>
+                </div>
+              </div>
+
+              {/* Grid Visual Seluruh Halaman */}
+              <div className="rounded-3xl border border-slate-200/90 bg-slate-100/70 p-4 sm:p-6 shadow-inner max-h-[640px] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                  {inspectData.pages.map((p) => {
+                    const isMarked = pagesToRemove.has(p.pageNum);
+
+                    return (
+                      <div
+                        key={p.pageNum}
+                        onClick={() => togglePageToRemove(p.pageNum)}
+                        className={`group relative flex flex-col items-center rounded-2xl border p-2.5 shadow-sm transition-all duration-200 cursor-pointer select-none ${
+                          isMarked
+                            ? 'border-rose-500 bg-rose-50/80 ring-2 ring-rose-500/30 shadow-md'
+                            : 'border-slate-200/90 bg-white hover:border-slate-400 hover:shadow-md'
+                        }`}
+                      >
+                        {/* Thumbnail Halaman */}
+                        <div className="relative w-full overflow-hidden rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                          {p.thumbnailUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={p.thumbnailUrl}
+                              alt={`Halaman ${p.pageNum}`}
+                              className={`w-full object-contain transition-all duration-200 ${
+                                isMarked ? 'opacity-35 grayscale scale-95' : 'opacity-100'
+                              }`}
+                            />
+                          ) : (
+                            <div className="flex h-36 w-full items-center justify-center text-xs text-slate-300">
+                              Halaman {p.pageNum}
+                            </div>
+                          )}
+
+                          {/* Overlay Status Hapus */}
+                          {isMarked ? (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-950/20 backdrop-blur-[1px]">
+                              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-lg shadow-rose-600/40">
+                                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </div>
+                              <span className="mt-1.5 rounded-full bg-rose-700 px-2 py-0.5 text-[9px] font-black uppercase text-white shadow">
+                                Dihapus
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition">
+                              <span className="rounded-lg bg-rose-100 border border-rose-200 px-2 py-1 text-[10px] font-bold text-rose-700 shadow-2xs">
+                                🗑️ Klik Hapus
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Tombol Perbesar Zoom Sudut Kiri Bawah */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveZoomPage(p.pageNum);
+                            }}
+                            className="absolute bottom-1.5 left-1.5 rounded-lg bg-slate-900/70 p-1 text-white opacity-0 group-hover:opacity-100 hover:bg-slate-900 transition shadow"
+                            title="Perbesar Pratinjau Halaman"
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Bar Informasi Nomor Halaman Bawah */}
+                        <div className="mt-2.5 flex w-full items-center justify-between text-xs px-1">
+                          <span className={`font-bold ${isMarked ? 'text-rose-700 line-through' : 'text-slate-800'}`}>
+                            Hal {p.pageNum}
+                          </span>
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
+                              isMarked
+                                ? 'bg-rose-200 text-rose-900'
+                                : 'bg-slate-100 text-slate-500'
+                            }`}
+                          >
+                            {isMarked ? 'Akan Dihapus' : 'Tetap Ada'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Kolom Kanan: Panel Ringkasan & Tombol Aksi (lg:col-span-4) */}
+            <div className="space-y-6 lg:col-span-4">
+              <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-xl shadow-slate-200/50 space-y-6 sticky top-6">
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">
+                    Ringkasan Penghapusan
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Pastikan susunan halaman akhir sudah sesuai sebelum menyimpan
+                  </p>
+                </div>
+
+                {/* Kotak Statistik Halaman Real-Time */}
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Total Halaman Awal:</span>
+                    <span className="font-extrabold text-slate-900 font-mono">
+                      {totalPages} Halaman
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-rose-600 font-bold flex items-center gap-1">
+                      <span>🗑️</span> Halaman Akan Dihapus:
+                    </span>
+                    <span className="font-extrabold text-rose-600 font-mono text-sm">
+                      {removedCount} Hal
+                    </span>
+                  </div>
+
+                  {removedCount > 0 && (
+                    <div className="text-[11px] text-slate-500 bg-white rounded-xl p-2.5 border border-slate-200 font-mono leading-relaxed">
+                      <span className="text-slate-400 font-sans block text-[10px] uppercase font-bold mb-0.5">
+                        Daftar Nomor Dihapus:
+                      </span>
+                      {formatPageNumbers(Array.from(pagesToRemove))}
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      <span>✓</span> Halaman Hasil Akhir:
+                    </span>
+                    <span className="font-black text-emerald-700 font-mono text-base">
+                      {Math.max(0, remainingCount)} Hal
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pesan Validasi Status */}
+                {isInvalidAllDeleted ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3.5 text-xs text-rose-800 font-medium">
+                    ⚠️ <strong>Tidak Dapat Menghapus Semua Halaman!</strong> Sisakan minimal 1 halaman dalam dokumen PDF baru.
+                  </div>
+                ) : removedCount === 0 ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-800 font-medium">
+                    💡 <strong>Belum ada halaman yang ditandai.</strong> Klik pada halaman yang ingin Anda buang.
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-800 font-medium">
+                    ✅ Siap diproses! Dokumen akan dipangkas menjadi <strong>{remainingCount} halaman</strong> berkualitas asli.
+                  </div>
+                )}
+
+                {/* Pengaturan Nama File Output */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Nama File PDF Bersih
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={outputName}
+                      onChange={(e) => setOutputName(e.target.value)}
+                      placeholder="dokumen-bersih"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 pr-12 text-xs font-semibold text-slate-800 transition focus:border-rose-500 focus:bg-white focus:outline-none"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-2.5 font-mono text-xs font-bold text-rose-600">
+                      .pdf
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progres Penghapusan */}
+                {isProcessing && processStatus && (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-rose-900">
+                      <span>{processStatus.message}</span>
+                      <span>{Math.round((processStatus.step / processStatus.total) * 100)}%</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-rose-200">
+                      <div
+                        className="h-full bg-rose-600 transition-all duration-300"
+                        style={{
+                          width: `${(processStatus.step / processStatus.total) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Tombol CTA Utama (Rose Merah Menonjol) */}
+                <button
+                  type="button"
+                  onClick={handleStartRemoval}
+                  disabled={isProcessing || removedCount === 0 || isInvalidAllDeleted}
+                  className="group relative flex w-full items-center justify-center gap-3 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] px-6 py-4 text-sm font-bold text-white shadow-[0_12px_28px_-6px_rgba(225,29,72,0.48)] transition-all duration-200 cursor-pointer disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>Menyusun Dokumen Bersih...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>
+                        {removedCount > 0
+                          ? `Hapus ${removedCount} Halaman Sekarang`
+                          : 'Pilih Halaman untuk Dihapus'}
+                      </span>
+                      <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================================= */}
+        {/* HASIL EKSEKUSI SELESAI */}
+        {/* ========================================================================================= */}
+        {result && resultUrl && (
+          <div className="mt-8 rounded-3xl border border-rose-200 bg-white p-6 sm:p-8 shadow-xl shadow-rose-500/5 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-md shadow-rose-600/30">
+                  <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-rose-800 bg-rose-50 px-2.5 py-0.5 rounded-full uppercase">
+                      Penghapusan Berhasil
+                    </span>
+                    <span className="text-xs text-slate-400 font-mono">
+                      {formatBytes(result.sizeBytes)}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 mt-1">
+                    {result.fileName}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={resultUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3.5 text-xs font-bold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  <svg className="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span>Buka di Tab Baru</span>
+                </a>
+                <a
+                  href={resultUrl}
+                  download={result.fileName}
+                  className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] px-7 py-3.5 text-sm font-bold text-white shadow-[0_10px_24px_-6px_rgba(225,29,72,0.45)] transition-all cursor-pointer"
+                >
+                  <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Unduh File PDF Bersih Sekarang</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={clearResult}
+                  className="rounded-2xl border border-slate-200 bg-white p-3 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer"
+                  title="Tutup banner hasil"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Statistik Hasil Penghapusan */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-center">
+                <div className="text-xs font-semibold text-slate-500">Halaman Awal</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">
+                  {result.originalPageCount} Hal
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-center">
+                <div className="text-xs font-semibold text-slate-500">Halaman Dihapus</div>
+                <div className="text-2xl font-black text-rose-600 mt-1">
+                  {result.removedPageCount} Hal
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-center">
+                <div className="text-xs font-semibold text-slate-500">Halaman Akhir</div>
+                <div className="text-2xl font-black text-emerald-700 mt-1">
+                  {result.remainingPageCount} Hal
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-center">
+                <div className="text-xs font-semibold text-slate-500">Ukuran Akhir</div>
+                <div className="text-2xl font-black text-slate-900 mt-1">
+                  {formatBytes(result.sizeBytes)}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Perbesar Zoom Halaman */}
+        {activeZoomPage !== null && inspectData && (
+          <div
+            onClick={() => setActiveZoomPage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-h-[90vh] max-w-2xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-900">
+                  Pratinjau Halaman {activeZoomPage} dari {inspectData.pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveZoomPage(null)}
+                  className="rounded-xl border border-slate-200 bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              {inspectData.pages[activeZoomPage - 1]?.thumbnailUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={inspectData.pages[activeZoomPage - 1].thumbnailUrl}
+                  alt={`Halaman ${activeZoomPage}`}
+                  className="max-h-[75vh] w-auto rounded-xl object-contain mx-auto shadow-md"
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
