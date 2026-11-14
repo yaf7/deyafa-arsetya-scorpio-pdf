@@ -307,6 +307,7 @@ export const PDF_TOOLS: PdfTool[] = [
       'Pulihkan struktur PDF yang rusak dan selamatkan halaman yang gagal terbuka dengan aman.',
     accent: 'lime',
     workflowSteps: ['Unggah PDF Rusak', 'Bangun Ulang Struktur', 'Pulihkan Dokumen'],
+    isLive: true,
   },
   {
     id: 'ocr-pdf',

@@ -23,7 +23,6 @@ import {
   ScanOrientation,
   ScanPageItem,
   ScanPageSize,
-  sanitizePdfFilename,
 } from '@/app/lib/scan-to-pdf';
 import { Navbar } from './Navbar';
 
@@ -114,13 +113,12 @@ export function ScanToPdfWorkspace() {
     }
 
     try {
-      // Deteksi ketersediaan multi kamera
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const videoDevices = devices.filter((d) => d.kind === 'videoinput');
         setHasMultipleCameras(videoDevices.length > 1);
       } catch {
-        // Abaikan jika enumerateDevices dibatasi
+        // Abaikan jika ditolak
       }
 
       const constraints: MediaStreamConstraints = {
@@ -139,9 +137,8 @@ export function ScanToPdfWorkspace() {
         videoRef.current.srcObject = stream;
         await videoRef.current.play().catch(() => {});
       }
-    } catch (err) {
-      console.warn('Gagal membuka kamera dengan facing ideal:', err);
-      // Fallback ke kamera default apa pun yang ada
+    } catch {
+      // Fallback ke video default
       try {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         cameraStreamRef.current = fallbackStream;
@@ -187,7 +184,6 @@ export function ScanToPdfWorkspace() {
     const video = videoRef.current;
     if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
-    // Flash animasi
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 200);
 
@@ -197,7 +193,6 @@ export function ScanToPdfWorkspace() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Gambar frame video
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     canvas.toBlob(async (blob) => {
@@ -303,7 +298,6 @@ export function ScanToPdfWorkspace() {
       prev.map((item) => {
         if (item.id !== pageId) return item;
 
-        // Buat canvas dan aplikasikan filter baru dari originalDataUrl
         const img = new Image();
         img.src = item.originalDataUrl;
 
@@ -494,12 +488,17 @@ export function ScanToPdfWorkspace() {
 
   return (
     <div
-      className="min-h-screen bg-slate-900 text-slate-100 flex flex-col selection:bg-rose-500 selection:text-white"
+      className="relative flex min-h-screen flex-col bg-[#F8F9FC] text-slate-900"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      <div
+        className="bg-dot-grid pointer-events-none fixed inset-0 z-0 opacity-75"
+        aria-hidden="true"
+      />
+
       <Navbar />
 
       {/* OVERLAY DRAG & DROP FILE */}
@@ -515,136 +514,194 @@ export function ScanToPdfWorkspace() {
         </div>
       )}
 
-      {/* HEADER UTAMA */}
-      <header className="relative border-b border-slate-800/80 bg-slate-950/40 backdrop-blur-md py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider mb-2">
-                <span>📸</span> Scanner Dokumen Kamera & Foto Digital
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
-                Pindai ke PDF <span className="text-rose-500">(CamScanner Browser)</span>
-              </h1>
-              <p className="text-slate-400 text-sm sm:text-base mt-1 max-w-2xl">
-                Ambil foto berkas fisik via kamera atau unggah foto dokumen Anda. Filter cerdas kami membersihkan bayangan, memutihkan kertas, dan mempertajam teks menjadi PDF resmi siap cetak.
-              </p>
-            </div>
+      {/* Input File Tersembunyi */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp,image/bmp"
+        className="hidden"
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          if (e.target.files) void handleAddImageFiles(e.target.files);
+        }}
+      />
+      <input
+        ref={addMoreInputRef}
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp,image/bmp"
+        className="hidden"
+        onChange={(e: ChangeEvent<HTMLInputElement>) => {
+          if (e.target.files) void handleAddImageFiles(e.target.files);
+        }}
+      />
 
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 font-medium">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                100% Client-Side Tanpa Server
-              </span>
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700/60"
-              >
-                ← Beranda
-              </Link>
-            </div>
+      <main className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+        {/* Breadcrumb Navigasi */}
+        <div className="mb-6 flex items-center justify-between gap-3 text-xs font-semibold text-slate-500">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="hover:text-slate-800 transition flex items-center gap-1">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+              </svg>
+              <span>Semua Alat</span>
+            </Link>
+            <span>/</span>
+            <span className="text-slate-400">ATUR PDF</span>
+            <span>/</span>
+            <span className="font-bold text-slate-900">Pindai ke PDF</span>
           </div>
+
+          {pages.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-2xs border border-slate-200">
+                <span className="text-rose-600 font-extrabold">📸</span>
+                <span>{pages.length} Lembar Terkumpul</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleOpenCameraModal}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 cursor-pointer"
+              >
+                + Kamera
+              </button>
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 shadow-2xs transition hover:bg-rose-100 cursor-pointer"
+              >
+                Bersihkan
+              </button>
+            </div>
+          )}
         </div>
-      </header>
 
-      {/* KONTEN UTAMA */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* TAMPILAN AWAL KOSONG (DROPZONE & CAMERA LAUNCHER) */}
+        {/* Hero Section */}
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-200/90 bg-orange-50/80 px-3.5 py-1 text-xs font-bold text-orange-800 uppercase tracking-wider shadow-2xs">
+            <svg className="h-3.5 w-3.5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            CAMSCANNER BROWSER • Pindai Kamera &amp; Foto Digital
+          </div>
+          <h1 className="mt-3 font-display text-2xl font-black tracking-tight text-slate-950 sm:text-3xl md:text-4xl">
+            Pindai ke PDF <span className="text-orange-600">(CamScanner Online)</span>
+          </h1>
+          <p className="mx-auto mt-2.5 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            Ambil foto berkas fisik via kamera atau unggah foto dokumen Anda. Filter cerdas kami memutihkan latar kertas, membersihkan bayangan, dan mempertajam teks menjadi PDF resmi siap cetak (A4, F4, Letter).
+          </p>
+        </div>
+
+        {/* Notifikasi Pesan Kesalahan */}
+        {processError && (
+          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 sm:text-sm shadow-xs">
+            <div className="flex-1 font-medium">{processError}</div>
+            <button
+              onClick={() => setProcessError(null)}
+              className="text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        {/* ========================================================================================= */}
+        {/* KONDISI 1: BELUM ADA LEMBAR (DROPZONE BERSIH TANPA PREVIEW DUMMY) */}
+        {/* ========================================================================================= */}
         {pages.length === 0 && !isLoadingImages && (
-          <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-200">
-            {/* KARTU DROPZONE BESAR */}
-            <div className="relative rounded-3xl border-2 border-dashed border-slate-700/80 hover:border-rose-500/60 bg-slate-900/60 hover:bg-slate-900/90 transition-all p-8 sm:p-12 text-center group shadow-xl">
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/jpeg,image/png,image/webp,image/bmp"
-                className="hidden"
-                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                  if (e.target.files) void handleAddImageFiles(e.target.files);
-                }}
-              />
-
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-rose-600/30 to-rose-400/20 flex items-center justify-center text-4xl sm:text-5xl border border-rose-500/40 group-hover:scale-105 transition-all shadow-lg">
-                    📄
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl shadow-lg border-2 border-slate-900">
-                    📸
-                  </div>
+          <div className="mx-auto w-full max-w-3xl space-y-8 animate-in fade-in zoom-in-95 duration-200">
+            <div
+              className={`group relative flex flex-col items-center justify-center rounded-3xl border-2 border-dashed p-10 sm:p-14 text-center transition-all duration-300 ${
+                isDraggingFile
+                  ? 'border-orange-500 bg-orange-50/70 shadow-2xl scale-[1.01]'
+                  : 'border-slate-300/80 bg-white/95 shadow-xl shadow-slate-200/50 hover:border-orange-400 hover:bg-white hover:shadow-2xl'
+              }`}
+            >
+              {/* Visual Icon */}
+              <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-tr from-orange-600 to-amber-500 text-white shadow-lg shadow-orange-500/30 transition-transform duration-300 group-hover:scale-110">
+                <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md border-2 border-white">
+                  <span className="text-[10px] font-black font-mono">SCN</span>
                 </div>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
+              <p className="font-display text-lg sm:text-xl font-black text-slate-900">
                 Pindai Lembar Dokumen Baru Anda
-              </h2>
-              <p className="text-slate-400 text-sm sm:text-base max-w-lg mx-auto mb-8">
-                Gunakan kamera langsung dari laptop / ponsel Anda atau pilih koleksi foto dokumen dari memori perangkat.
+              </p>
+              <p className="mt-2 max-w-md text-xs sm:text-sm text-slate-500 leading-relaxed">
+                Gunakan kamera langsung dari laptop / ponsel Anda atau pilih koleksi foto dokumen dari memori perangkat. Anda juga dapat menempel gambar langsung dengan <kbd className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-700 border border-slate-300">Ctrl + V</kbd>.
               </p>
 
-              {/* DUA TOMBOL AKSI UTAMA */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+              {/* Dua Tombol Aksi Utama */}
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
                 <button
                   type="button"
                   onClick={handleOpenCameraModal}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white font-bold text-sm shadow-[0_12px_28px_-6px_rgba(225,29,72,0.48)] transition-all cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 px-6 shadow-[0_12px_28px_-6px_rgba(225,29,72,0.48)] transition-all cursor-pointer text-sm"
                 >
-                  <span className="text-xl">📷</span>
-                  Buka Kamera Pindai
+                  <span className="text-lg">📷</span>
+                  <span>Buka Kamera Pindai</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-slate-800 hover:bg-slate-750 hover:border-slate-600 active:scale-[0.99] text-white font-bold text-sm border border-slate-700 transition-all cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 font-bold py-3.5 px-6 shadow-sm transition-all cursor-pointer text-sm"
                 >
-                  <span className="text-xl">🖼️</span>
-                  Pilih Foto dari Berkas
+                  <span className="text-lg">🖼️</span>
+                  <span>Pilih Foto dari Berkas</span>
                 </button>
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-rose-400">✓</span> Mendukung JPG, PNG, WebP & BMP
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-rose-400">✓</span> Bisa Tempel Clipboard (<kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">Ctrl + V</kbd>)
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-rose-400">✓</span> Multi-lembar Otomatis
-                </span>
+              {/* Keunggulan Fitur */}
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] font-semibold text-slate-400">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-orange-500 font-bold">✓</span>
+                  <span>Mendukung JPG, PNG, WebP &amp; BMP</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-orange-500 font-bold">✓</span>
+                  <span>Filter Pemutih Kertas Otomatis</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-orange-500 font-bold">✓</span>
+                  <span>100% Client-Side Tanpa Server</span>
+                </div>
               </div>
             </div>
 
-            {/* KARTU FITUR KEUNGGULAN SCANNER */}
+            {/* 3 Kartu Fitur Keunggulan */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-xl mb-3">
+              <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center text-xl mb-3 font-bold">
                   ✨
                 </div>
-                <h4 className="font-bold text-white text-sm">Warna Tajam (Magic Color)</h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <h4 className="font-bold text-slate-900 text-sm">Warna Tajam (Magic Color)</h4>
+                <p className="text-xs text-slate-500 mt-1">
                   Menghilangkan kusam kertas kuning/abu-abu dan menonjolkan warna stempel, logo instansi, serta tanda tangan basah.
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-xl mb-3">
+              <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center text-xl mb-3 font-bold">
                   📄
                 </div>
-                <h4 className="font-bold text-white text-sm">Hitam-Putih Bersih (B&W)</h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <h4 className="font-bold text-slate-900 text-sm">Hitam-Putih Bersih (B&amp;W)</h4>
+                <p className="text-xs text-slate-500 mt-1">
                   Algoritma binarisasi cerdas yang memutihkan kertas 100% dan membuat teks tajam pekat tanpa bayangan lipatan.
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl mb-3">
+              <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center text-xl mb-3 font-bold">
                   📐
                 </div>
-                <h4 className="font-bold text-white text-sm">Standar A4, F4 & Folio</h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <h4 className="font-bold text-slate-900 text-sm">Standar A4, F4 &amp; Folio</h4>
+                <p className="text-xs text-slate-500 mt-1">
                   Format otomatis ke lembar A4 CPNS atau F4/Folio kedinasan dengan rasio gambar tetap proporsional dan tidak gepeng.
                 </p>
               </div>
@@ -652,66 +709,56 @@ export function ScanToPdfWorkspace() {
           </div>
         )}
 
-        {/* LOADING SAAT PROSES GAMBAR */}
+        {/* Loading Saat Proses Gambar */}
         {isLoadingImages && (
           <div className="py-20 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full border-4 border-rose-500/20 border-t-rose-500 animate-spin mb-4"></div>
-            <h3 className="text-lg font-bold text-white">{loadingText || 'Memproses foto dokumen...'}</h3>
+            <div className="h-10 w-10 animate-spin rounded-full border-3 border-orange-600 border-t-transparent mb-4" />
+            <h3 className="text-base font-bold text-slate-800">{loadingText || 'Memproses foto dokumen...'}</h3>
             <p className="text-xs text-slate-400 mt-1">Menerapkan filter dokumen dan menyiapkan kanvas...</p>
           </div>
         )}
 
-        {/* WORKSPACE LEMBAR SCAN (JIKA MINIMAL 1 LEMBAR SUDAH ADA) */}
+        {/* ========================================================================================= */}
+        {/* KONDISI 2: WORKSPACE LEMBAR SCAN (MINIMAL 1 LEMBAR SUDAH ADA) */}
+        {/* ========================================================================================= */}
         {pages.length > 0 && (
           <div className="space-y-6">
-            {/* HIDDEN INPUT UNTUK TAMBAH FOTO LAGI */}
-            <input
-              ref={addMoreInputRef}
-              type="file"
-              multiple
-              accept="image/jpeg,image/png,image/webp,image/bmp"
-              className="hidden"
-              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                if (e.target.files) void handleAddImageFiles(e.target.files);
-              }}
-            />
-
-            {/* TOP BAR WORKSPACE */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 shadow-lg">
+            {/* Top Bar Workspace */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-rose-600/20 border border-rose-500/30 text-rose-400 flex items-center justify-center text-2xl font-black">
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center text-2xl font-black">
                   {pages.length}
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    <span>{pages.length} Lembar Dokumen Siap Diproses</span>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span>{pages.length} Lembar Dokumen Siap Disusun</span>
                   </h3>
-                  <p className="text-xs text-slate-400">
-                    Tarik kartu untuk menyusun urutan, klik putar, atau ubah filter per lembar dokumen.
+                  <p className="text-xs text-slate-500">
+                    Tarik kartu untuk menyusun urutan, klik putar, atau sesuaikan filter per lembar dokumen.
                   </p>
                 </div>
               </div>
 
-              {/* ACTION BUTTONS DI HEADER WORKSPACE */}
+              {/* Tombol Aksi Top Bar */}
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleOpenCameraModal}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
                 >
-                  <span>📷</span> Ambil Foto Kamera
+                  <span>📷</span> Ambil Kamera
                 </button>
                 <button
                   type="button"
                   onClick={() => addMoreInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
                 >
-                  <span>➕</span> Tambah dari File
+                  <span>➕</span> Tambah File
                 </button>
                 <button
                   type="button"
                   onClick={handleRotateAll}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/80 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs cursor-pointer"
                   title="Putar semua lembar 90 derajat searah jarum jam"
                 >
                   <span>↻</span> Putar Semua
@@ -719,7 +766,7 @@ export function ScanToPdfWorkspace() {
                 <button
                   type="button"
                   onClick={handleReversePages}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700/80 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs cursor-pointer"
                   title="Balik urutan lembar halaman"
                 >
                   <span>⇄</span> Balik Urutan
@@ -727,17 +774,17 @@ export function ScanToPdfWorkspace() {
                 <button
                   type="button"
                   onClick={handleResetAll}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-white text-xs font-medium border border-rose-800/40 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium transition-all shadow-2xs cursor-pointer"
                 >
                   <span>🗑️</span> Bersihkan
                 </button>
               </div>
             </div>
 
-            {/* FILTER MASSAL BANNER */}
-            <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Filter Massal Banner */}
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-200">Terapkan Filter ke Seluruh Lembar:</span>
+                <span className="text-xs sm:text-sm font-bold text-slate-800">Terapkan Filter ke Seluruh Lembar:</span>
                 <span className="text-xs text-slate-400 hidden sm:inline">(Klik salah satu untuk mengubah semuanya sekaligus)</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -752,7 +799,7 @@ export function ScanToPdfWorkspace() {
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         isActive
                           ? 'bg-rose-600 text-white shadow-md'
-                          : 'bg-slate-800/90 hover:bg-slate-750 text-slate-300 border border-slate-700/60'
+                          : 'border border-slate-200 bg-slate-50 hover:bg-white text-slate-700'
                       }`}
                     >
                       <span>{f.icon}</span>
@@ -763,10 +810,9 @@ export function ScanToPdfWorkspace() {
               </div>
             </div>
 
-            {/* GRID KARTU LEMBAR HASIL PINDAI */}
+            {/* Grid Kartu Lembar Hasil Pindai */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {pages.map((page, index) => {
-                const isRotated90or270 = page.rotation === 90 || page.rotation === 270;
                 const isDragging = draggedIndex === index;
                 const isDragOver = dragOverIndex === index;
 
@@ -778,67 +824,66 @@ export function ScanToPdfWorkspace() {
                     onDragOver={(e) => handleCardDragOver(e, index)}
                     onDrop={(e) => handleCardDrop(e, index)}
                     onDragEnd={handleCardDragEnd}
-                    className={`relative rounded-2xl bg-slate-950/80 border transition-all flex flex-col overflow-hidden group ${
+                    className={`relative rounded-2xl bg-white border transition-all flex flex-col overflow-hidden group shadow-sm hover:shadow-md ${
                       isDragging ? 'opacity-40 scale-95 border-rose-500' : 'opacity-100'
                     } ${
-                      isDragOver ? 'border-rose-400 ring-2 ring-rose-500/50' : 'border-slate-800 hover:border-slate-700'
+                      isDragOver ? 'border-orange-500 ring-2 ring-orange-500/30' : 'border-slate-200/80'
                     }`}
                   >
-                    {/* TOP BADGE KARTU */}
-                    <div className="px-3 py-2 bg-slate-900/90 border-b border-slate-800/80 flex items-center justify-between">
+                    {/* Top Header Kartu */}
+                    <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-rose-600/30 text-rose-300 font-bold text-xs flex items-center justify-center border border-rose-500/30">
+                        <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-bold text-xs flex items-center justify-center border border-orange-200">
                           {index + 1}
                         </span>
-                        <span className="text-xs font-semibold text-slate-300">
+                        <span className="text-xs font-bold text-slate-700">
                           Lembar {index + 1}
                         </span>
                       </div>
 
-                      {/* BADGE FILTER & ROTASI */}
+                      {/* Badge Filter & Rotasi */}
                       <div className="flex items-center gap-1.5 text-[11px]">
                         {page.rotation > 0 && (
-                          <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">
+                          <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono">
                             {page.rotation}°
                           </span>
                         )}
-                        <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60">
+                        <span className="px-2 py-0.5 rounded bg-white text-slate-600 border border-slate-200 shadow-2xs">
                           {SCAN_FILTERS[page.filter].icon} {SCAN_FILTERS[page.filter].name.split(' ')[0]}
                         </span>
                       </div>
                     </div>
 
-                    {/* PRATINJAU GAMBAR */}
+                    {/* Pratinjau Gambar */}
                     <div
-                      className="relative h-60 bg-slate-900 flex items-center justify-center p-3 cursor-pointer overflow-hidden"
+                      className="relative h-60 bg-slate-100/60 flex items-center justify-center p-3 cursor-pointer overflow-hidden"
                       onClick={() => setActiveZoomIndex(index)}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={page.filteredDataUrl}
                         alt={`Lembar ${index + 1}`}
-                        className="max-h-full max-w-full object-contain rounded-lg shadow-md transition-transform duration-200"
+                        className="max-h-full max-w-full object-contain rounded-lg shadow-sm transition-transform duration-200"
                         style={{
                           transform: `rotate(${page.rotation}deg)`,
                         }}
                       />
 
-                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
-                        <span className="px-3 py-1.5 rounded-xl bg-slate-900/90 text-white text-xs font-bold shadow-lg border border-slate-700/80 flex items-center gap-1.5">
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[1px]">
+                        <span className="px-3 py-1.5 rounded-xl bg-white text-slate-900 text-xs font-bold shadow-lg flex items-center gap-1.5">
                           <span>🔍</span> Perbesar Lembar
                         </span>
                       </div>
                     </div>
 
-                    {/* KONTROL EDIT CEPAT DI SETIAP KARTU */}
-                    <div className="p-3 bg-slate-950/90 border-t border-slate-800/80 space-y-2.5">
-                      {/* PEMILIH FILTER PER KARTU */}
+                    {/* Kontrol Edit Per Kartu */}
+                    <div className="p-3 bg-white border-t border-slate-100 space-y-2.5">
                       <div className="flex items-center justify-between gap-1 text-[11px]">
-                        <span className="text-slate-400 font-medium">Filter:</span>
+                        <span className="text-slate-500 font-medium">Filter:</span>
                         <select
                           value={page.filter}
                           onChange={(e) => void handleChangePageFilter(page.id, e.target.value as ScanFilterType)}
-                          className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-slate-200 text-xs focus:ring-1 focus:ring-rose-500 focus:outline-none"
+                          className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-800 text-xs focus:ring-1 focus:ring-orange-500 focus:outline-none"
                         >
                           <option value="magic-color">✨ Warna Tajam</option>
                           <option value="magic-bw">📄 Hitam-Putih Bersih</option>
@@ -847,12 +892,11 @@ export function ScanToPdfWorkspace() {
                         </select>
                       </div>
 
-                      {/* TOMBOL AKSI: PUTAR, GESER, HAPUS */}
                       <div className="grid grid-cols-4 gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleRotatePage(index)}
-                          className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
                           title="Putar 90 derajat searah jarum jam"
                         >
                           <span>↻</span>
@@ -863,8 +907,8 @@ export function ScanToPdfWorkspace() {
                           type="button"
                           disabled={index === 0}
                           onClick={() => handleMovePage(index, index - 1)}
-                          className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
-                          title="Pindahkan lembar ke kiri / sebelum"
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none text-slate-700 border border-slate-200 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
+                          title="Pindahkan lembar ke kiri"
                         >
                           <span>←</span>
                           <span className="text-[10px] font-normal">Maju</span>
@@ -874,8 +918,8 @@ export function ScanToPdfWorkspace() {
                           type="button"
                           disabled={index === pages.length - 1}
                           onClick={() => handleMovePage(index, index + 1)}
-                          className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-slate-300 hover:text-white border border-slate-800 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
-                          title="Pindahkan lembar ke kanan / sesudah"
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 disabled:opacity-30 disabled:pointer-events-none text-slate-700 border border-slate-200 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
+                          title="Pindahkan lembar ke kanan"
                         >
                           <span>→</span>
                           <span className="text-[10px] font-normal">Mundur</span>
@@ -884,7 +928,7 @@ export function ScanToPdfWorkspace() {
                         <button
                           type="button"
                           onClick={() => handleDeletePage(index)}
-                          className="p-1.5 rounded-lg bg-rose-950/30 hover:bg-rose-900/60 text-rose-300 hover:text-white border border-rose-800/30 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer"
                           title="Hapus lembar ini"
                         >
                           <span>🗑️</span>
@@ -897,18 +941,17 @@ export function ScanToPdfWorkspace() {
               })}
             </div>
 
-            {/* PANEL PENGATURAN PDF & TOMBOL EKSEKUSI CTA */}
-            <div className="mt-8 p-6 rounded-3xl bg-slate-950/90 border border-slate-800 shadow-2xl space-y-6">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>⚙️</span> Pengaturan Format Dokumen PDF Akhir
+            {/* Panel Pengaturan Dokumen & Tombol CTA */}
+            <div className="mt-8 p-6 sm:p-8 rounded-3xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 space-y-6">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span className="text-orange-600">⚙️</span> Pengaturan Format Dokumen PDF Akhir
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* UKURAN KERTAS */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                     <span>Ukuran Kertas</span>
-                    <span className="text-[11px] text-rose-400 font-normal">Rekomendasi A4</span>
+                    <span className="text-[11px] text-orange-600 font-normal">Rekomendasi A4</span>
                   </label>
                   <select
                     value={pageSize}
@@ -916,7 +959,7 @@ export function ScanToPdfWorkspace() {
                       setPageSize(e.target.value as ScanPageSize);
                       clearResult();
                     }}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
                   >
                     <option value="a4">A4 (210 × 297 mm) — Standar CPNS / Resmi</option>
                     <option value="f4">F4 / Folio (215 × 330 mm) — Kedinasan RI</option>
@@ -925,16 +968,15 @@ export function ScanToPdfWorkspace() {
                   </select>
                 </div>
 
-                {/* ORIENTASI */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Orientasi Halaman</label>
+                  <label className="text-xs font-bold text-slate-700">Orientasi Halaman</label>
                   <select
                     value={orientation}
                     onChange={(e) => {
                       setOrientation(e.target.value as ScanOrientation);
                       clearResult();
                     }}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
                   >
                     <option value="auto">Auto (Deteksi Otomatis Tiap Lembar)</option>
                     <option value="portrait">Tegak (Portrait)</option>
@@ -942,16 +984,15 @@ export function ScanToPdfWorkspace() {
                   </select>
                 </div>
 
-                {/* MARGIN */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Margin / Batas Tepi</label>
+                  <label className="text-xs font-bold text-slate-700">Margin / Batas Tepi</label>
                   <select
                     value={margin}
                     onChange={(e) => {
                       setMargin(e.target.value as ScanMargin);
                       clearResult();
                     }}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 font-medium"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
                   >
                     <option value="none">Tanpa Margin (Foto Penuh ke Tepi)</option>
                     <option value="narrow">Sempit (12 pt — Rapi)</option>
@@ -959,16 +1000,15 @@ export function ScanToPdfWorkspace() {
                   </select>
                 </div>
 
-                {/* NAMA BERKAS */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Nama Berkas PDF</label>
+                  <label className="text-xs font-bold text-slate-700">Nama Berkas PDF</label>
                   <div className="relative">
                     <input
                       type="text"
                       value={outputName}
                       onChange={(e) => setOutputName(e.target.value)}
                       placeholder="dokumen-pindai-scorpio"
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-500 pr-12 font-medium"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 pr-12 font-medium"
                     />
                     <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-mono pointer-events-none">
                       .pdf
@@ -977,18 +1017,18 @@ export function ScanToPdfWorkspace() {
                 </div>
               </div>
 
-              {/* INDIKATOR STATUS PROSES */}
+              {/* Indikator Status Proses */}
               {isProcessing && processStatus && (
-                <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-800/50 space-y-2 animate-in fade-in">
-                  <div className="flex items-center justify-between text-xs font-bold text-rose-300">
+                <div className="p-4 rounded-2xl bg-orange-50 border border-orange-200 space-y-2 animate-in fade-in">
+                  <div className="flex items-center justify-between text-xs font-bold text-orange-900">
                     <span>{processStatus.message}</span>
                     <span>
                       Langkah {processStatus.current} dari {processStatus.total}
                     </span>
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="w-full h-2 rounded-full bg-orange-100 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-rose-500 to-rose-400 transition-all duration-300"
+                      className="h-full bg-orange-600 transition-all duration-300"
                       style={{
                         width: `${(processStatus.current / processStatus.total) * 100}%`,
                       }}
@@ -997,22 +1037,15 @@ export function ScanToPdfWorkspace() {
                 </div>
               )}
 
-              {/* PESAN ERROR */}
-              {processError && (
-                <div className="p-4 rounded-2xl bg-red-950/60 border border-red-800 text-red-200 text-xs sm:text-sm font-medium">
-                  ⚠️ {processError}
-                </div>
-              )}
-
-              {/* TOMBOL CTA UTAMA CRIMSON ROSE */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2 border-t border-slate-800/80">
+              {/* Tombol CTA Utama */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   disabled={isProcessing || pages.length === 0}
                   onClick={handleGeneratePdf}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none text-white font-bold py-4 px-8 rounded-2xl shadow-[0_12px_28px_-6px_rgba(225,29,72,0.48)] transition-all text-base cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-rose-600 hover:bg-rose-700 active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none text-white font-bold py-4 px-8 rounded-2xl shadow-[0_12px_28px_-6px_rgba(225,29,72,0.48)] transition-all text-sm cursor-pointer"
                 >
-                  <span className="text-xl">📄</span>
+                  <span className="text-lg">📄</span>
                   <span>
                     {isProcessing ? 'Menyusun Dokumen PDF...' : `Simpan & Buat PDF Sekarang (${pages.length} Lembar)`}
                   </span>
@@ -1020,29 +1053,29 @@ export function ScanToPdfWorkspace() {
               </div>
             </div>
 
-            {/* HASIL EKSEKUSI (RESULT CARD) */}
+            {/* Hasil Eksekusi (Result Card) */}
             {result && resultUrl && (
-              <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-2 border-rose-500/50 shadow-2xl space-y-6 animate-in fade-in zoom-in-95">
+              <div className="p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/40 bg-white shadow-2xl space-y-6 animate-in fade-in zoom-in-95">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-3xl shadow-lg">
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center text-3xl shadow-xs font-bold">
                       ✓
                     </div>
                     <div>
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold mb-1">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold mb-1">
                         Dokumen PDF Berhasil Dibuat
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-black text-white">
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-900">
                         {result.fileName}
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                        Ukuran: <strong className="text-white">{formatBytes(result.sizeBytes)}</strong> • Jumlah: <strong className="text-white">{result.pageCount} Halaman</strong> • Standar: <strong className="text-white">{SCAN_PAGE_SIZES[result.pageSize].label.split(' ')[0]}</strong>
+                      <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                        Ukuran: <strong className="text-slate-800">{formatBytes(result.sizeBytes)}</strong> • Jumlah: <strong className="text-slate-800">{result.pageCount} Halaman</strong> • Standar: <strong className="text-slate-800">{SCAN_PAGE_SIZES[result.pageSize].label.split(' ')[0]}</strong>
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-800">
+                <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100">
                   <a
                     href={resultUrl}
                     download={result.fileName}
@@ -1056,7 +1089,7 @@ export function ScanToPdfWorkspace() {
                     href={resultUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold py-3.5 px-5 rounded-2xl border border-slate-700 transition-all text-sm cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 font-bold py-3.5 px-5 rounded-2xl shadow-2xs transition-all text-sm cursor-pointer"
                   >
                     <span>👀</span>
                     Buka Pratinjau di Tab Baru
@@ -1065,7 +1098,7 @@ export function ScanToPdfWorkspace() {
                   <button
                     type="button"
                     onClick={handleResetAll}
-                    className="inline-flex items-center justify-center gap-2.5 bg-transparent hover:bg-slate-800/60 text-slate-400 hover:text-slate-200 font-semibold py-3.5 px-5 rounded-2xl border border-slate-800 transition-all text-sm cursor-pointer"
+                    className="inline-flex items-center justify-center gap-2.5 bg-transparent hover:bg-slate-100 text-slate-500 hover:text-slate-700 font-semibold py-3.5 px-5 rounded-2xl border border-slate-200 transition-all text-sm cursor-pointer"
                   >
                     <span>🔄</span>
                     Pindai Dokumen Baru
@@ -1077,10 +1110,9 @@ export function ScanToPdfWorkspace() {
         )}
       </main>
 
-      {/* MODAL KAMERA PEMINDAI LANGSUNG */}
+      {/* Modal Kamera Pemindai Langsung */}
       {isCameraActive && (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-in fade-in duration-200">
-          {/* HEADER KAMERA */}
           <div className="w-full max-w-3xl flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
@@ -1095,7 +1127,6 @@ export function ScanToPdfWorkspace() {
                   type="button"
                   onClick={handleToggleCameraFacing}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
-                  title="Ganti kamera depan / belakang"
                 >
                   <span>🔄</span>
                   <span className="hidden sm:inline">Balik Kamera</span>
@@ -1106,14 +1137,12 @@ export function ScanToPdfWorkspace() {
                 type="button"
                 onClick={handleCloseCameraModal}
                 className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center font-bold text-sm border border-slate-700 transition-all cursor-pointer"
-                title="Tutup kamera"
               >
                 ✕
               </button>
             </div>
           </div>
 
-          {/* VIEWPORT KAMERA DENGAN FRAME PANDUAN DOKUMEN */}
           <div className="relative w-full max-w-3xl flex-1 max-h-[68vh] rounded-3xl overflow-hidden bg-black flex items-center justify-center my-4 border border-slate-800 shadow-2xl">
             {cameraError ? (
               <div className="p-6 text-center max-w-md">
@@ -1140,14 +1169,12 @@ export function ScanToPdfWorkspace() {
                   className="w-full h-full object-cover sm:object-contain"
                 />
 
-                {/* OVERLAY FLASH SHUTTER */}
                 {isFlashing && (
                   <div className="absolute inset-0 bg-white/90 z-20 pointer-events-none animate-out fade-out duration-200"></div>
                 )}
 
-                {/* FRAME PANDUAN DOKUMEN */}
                 <div className="absolute inset-4 sm:inset-10 border-2 border-dashed border-rose-500/70 rounded-2xl pointer-events-none flex flex-col justify-between p-4">
-                  <div className="flex justify-between items-start text-[11px] font-mono text-rose-400/90 font-bold bg-slate-950/60 px-3 py-1 rounded-lg backdrop-blur-sm self-center">
+                  <div className="flex justify-between items-start text-[11px] font-mono text-rose-400 font-bold bg-black/60 px-3 py-1 rounded-lg backdrop-blur-sm self-center">
                     Posisikan berkas kertas di dalam bingkai ini
                   </div>
                   <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
@@ -1159,13 +1186,11 @@ export function ScanToPdfWorkspace() {
             )}
           </div>
 
-          {/* BOTTOM CONTROLS: SHUTTER BUTTON & COUNTER */}
           <div className="w-full max-w-3xl flex items-center justify-between gap-4">
             <div className="text-xs text-slate-300">
               Terkumpul: <strong className="text-rose-400 font-bold">{pages.length} Lembar</strong>
             </div>
 
-            {/* BIG SHUTTER BUTTON */}
             <button
               type="button"
               disabled={!!cameraError}
@@ -1187,7 +1212,7 @@ export function ScanToPdfWorkspace() {
         </div>
       )}
 
-      {/* MODAL ZOOM LEMBAR */}
+      {/* Modal Zoom Lembar */}
       {activeZoomIndex !== null && pages[activeZoomIndex] && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 animate-in fade-in duration-200"
